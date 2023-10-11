@@ -20,13 +20,17 @@ model User {
   cart           String[]
   profilePicture String?
   bio            String?
+
+  @@map("users")
 }
 
-model Course {
+model Product {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   subTitle    String?
   price       Float
   description String?
   thumbNail   String
+
+  @@map("products")
 }

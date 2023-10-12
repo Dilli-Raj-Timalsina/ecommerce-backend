@@ -4,6 +4,9 @@ import userRouter from "./routes/userRouter";
 import productRouter from "./routes/productRouter";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import xss from "xss-clean";
+import rateLimit from "express-rate-limit";
 
 const corsOptions: CorsOptions = {
     origin: "http://localhost:8081",
@@ -15,11 +18,20 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 
+app.use(helmet());
+
+app.use(xss());
+
 app.use(cookieParser());
 
-app.get("/", (req, res) => {
-    res.send("hey I am from server");
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
 });
+
+app.use("/", limiter);
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);

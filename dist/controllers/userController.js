@@ -41,10 +41,9 @@ const createSendToken = (user, statusCode, res) => __awaiter(void 0, void 0, voi
     if (process.env.NODE_ENV === "production")
         cookieOptions.httpOnly = true;
     res.cookie("jwt", token, cookieOptions);
-    const { id, name, email } = user;
+    const { id, email } = user;
     const userProfile = {
         id,
-        name,
         email,
     };
     res.status(statusCode).json({
@@ -94,7 +93,7 @@ const signupControl = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         },
     }));
     // // if everything is ok :send token to the user
-    yield createSendToken({ id: user.id, email: user.email, name: user.name }, 200, res);
+    yield createSendToken({ id: user.id, email: user.email }, 200, res);
 });
 exports.signupControl = signupControl;
 //7:) login in user based on {email,password} and send jwt in cokkie
@@ -110,6 +109,6 @@ const loginControl = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         throw new Error("Incorrect email or password");
     }
     //c) If everything is ok: send token to the logged in user
-    yield createSendToken({ id: user.id, email: user.email, name: user.name }, 200, res);
+    yield createSendToken({ id: user.id, email: user.email }, 200, res);
 });
 exports.loginControl = loginControl;

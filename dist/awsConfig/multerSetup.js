@@ -31,4 +31,4 @@ const upload = (0, multer_1.default)({
     // fileFilter,
     // limits: { fileSize: 1000000000 },
 });
-module.exports = upload;
+exports.default = upload;

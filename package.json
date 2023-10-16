@@ -30,12 +30,13 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@aws-sdk/types": "^3.425.0",
+        "@prisma/client": "^5.4.2",
         "bcrypt": "^5.1.1",
         "body-parser": "^1.20.2",
         "concurrently": "^8.2.1",
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
         "express": "^4.18.2",
         "express-rate-limit": "^7.1.1",
         "helmet": "^7.0.0",
@@ -45,6 +46,7 @@
         "nodemailer": "^6.9.6",
         "nodemon": "^3.0.1",
         "rimraf": "^5.0.5",
+        "ts-dotenv": "^0.9.1",
         "ts-node": "^10.9.1",
         "xss-clean": "^0.1.4",
         "zod": "^3.22.4"

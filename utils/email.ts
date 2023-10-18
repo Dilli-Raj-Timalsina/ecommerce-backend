@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { Readable } from "stream";
+
 require("dotenv").config();
 
 interface Options {
@@ -37,4 +37,4 @@ const sendMailNormal = async (options: Options) => {
     }
 };
 
-module.exports = { sendMailNormal };
+export { sendMailNormal };

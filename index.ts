@@ -2,6 +2,7 @@ import express from "express";
 import cors, { CorsOptions } from "cors";
 import userRouter from "./routes/userRouter";
 import productRouter from "./routes/productRouter";
+import utilsRouter from "./routes/utilsRouter";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
@@ -39,6 +40,8 @@ app.use("/api", limiter);
 app.use("/api/v1/user", userRouter);
 
 app.use("/api/v1/product", productRouter);
+
+app.use("/api/v1/utils", utilsRouter);
 
 app.use("/", (req, res) => {
     res.end("This is our Base URL , please try diffrent /api routes !");

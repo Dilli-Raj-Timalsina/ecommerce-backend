@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginControl = exports.signupControl = void 0;
+exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -96,7 +96,6 @@ const signupControl = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     yield createSendToken({ id: user.id, email: user.email }, 200, res);
 });
 exports.signupControl = signupControl;
-//7:) login in user based on {email,password} and send jwt in cokkie
 const loginControl = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     //a)check if email or password exist:
@@ -112,3 +111,17 @@ const loginControl = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     yield createSendToken({ id: user.id, email: user.email }, 200, res);
 });
 exports.loginControl = loginControl;
+const updateCart = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { courseList, userId } = req.body;
+    yield prismaClientExport_1.default.user.update({
+        where: { id: userId },
+        data: {
+            cart: courseList,
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "succesfully updated cart",
+    });
+});
+exports.updateCart = updateCart;

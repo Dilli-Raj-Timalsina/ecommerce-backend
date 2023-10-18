@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const userRouter_1 = __importDefault(require("./routes/userRouter"));
 const productRouter_1 = __importDefault(require("./routes/productRouter"));
+const utilsRouter_1 = __importDefault(require("./routes/utilsRouter"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -32,6 +33,7 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use("/api", limiter);
 app.use("/api/v1/user", userRouter_1.default);
 app.use("/api/v1/product", productRouter_1.default);
+app.use("/api/v1/utils", utilsRouter_1.default);
 app.use("/", (req, res) => {
     res.end("This is our Base URL , please try diffrent /api routes !");
 });

@@ -118,7 +118,6 @@ const signupControl = async (req: Request, res: Response) => {
     await createSendToken({ id: user.id, email: user.email }, 200, res);
 };
 
-//7:) login in user based on {email,password} and send jwt in cokkie
 const loginControl = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
@@ -136,4 +135,18 @@ const loginControl = async (req: Request, res: Response) => {
     await createSendToken({ id: user.id, email: user.email }, 200, res);
 };
 
-export { signupControl, loginControl };
+const updateCart = async (req: Request, res: Response, next: NextFunction) => {
+    const { courseList, userId } = req.body;
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            cart: courseList,
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "succesfully updated cart",
+    });
+};
+
+export { signupControl, loginControl, updateCart };

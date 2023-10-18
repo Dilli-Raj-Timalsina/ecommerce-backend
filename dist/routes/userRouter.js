@@ -9,6 +9,5 @@ const userRouter = express_1.default.Router();
 // general authentication routes :
 userRouter.route("/signup").post(userController_1.signupControl);
 userRouter.route("/login").post(userController_1.loginControl);
-userRouter.route("/forgetPassword").post();
-userRouter.route("/verifyToken").post();
+userRouter.route("/updateCart").post(userController_1.updateCart);
 exports.default = userRouter;

@@ -1,9 +1,9 @@
 import express from "express";
-import { contactUs } from "../controllers/utilsController";
+import { contactUs, nofifyPurchase } from "../controllers/utilsController";
 const utilsRouter = express.Router();
 
 // general authentication routes :
 utilsRouter.route("/contactUs").post(contactUs);
-utilsRouter.route("/").post();
+utilsRouter.route("/notifyPurchase").post(nofifyPurchase);
 
 export default utilsRouter;

@@ -4,6 +4,8 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import prisma from "./../prisma/prismaClientExport";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { createBucket } from "./../awsConfig/bucketControl";
+import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+
 import s3 from "./../awsConfig/credential";
 
 type Product = {
@@ -13,77 +15,6 @@ type Product = {
     price: number;
     description?: string | null;
     thumbNail: string;
-};
-
-const returnInputAccMimetype = (
-    file: Express.Multer.File,
-    bucketName: string,
-    key: string
-) => {
-    const { mimetype } = file;
-
-    if (mimetype === "video/mp4") {
-        return {
-            Bucket: bucketName,
-            Key: key,
-            Body: file.buffer,
-            ContentType: "video/mp4",
-            ContentDisposition: "inline",
-            CacheControl: "max-age=3153600, public",
-        };
-    } else {
-        return {
-            Bucket: bucketName,
-            Key: key,
-            Body: file.buffer,
-        };
-    }
-};
-
-const createProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const { title, price, description, subTitle } = req.body;
-    // Database work:
-
-    const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
-    //update the product db
-    const product = (await prisma.product.create({
-        data: {
-            title,
-            price,
-            description,
-            subTitle,
-            thumbNail: thumbNailKey,
-        },
-    })) as Product;
-
-    // Get a signed URL with an infinite expiry date for storing the thumbnail
-    const input = {
-        Bucket: product.id.toString(),
-        Key: thumbNailKey,
-    };
-    const command1 = new GetObjectCommand(input);
-    const url = await getSignedUrl(s3, command1, {});
-
-    // Cloud work:
-    // Create a new course bucket
-    await createBucket({ Bucket: product.id.toString() });
-
-    // Upload the thumbnail in S3
-    const command = new PutObjectCommand({
-        Bucket: product.id.toString(),
-        Key: thumbNailKey,
-        Body: req.file!.buffer,
-    });
-    await s3.send(command);
-
-    res.status(200).json({
-        status: "success",
-        product,
-    });
 };
 
 const deleteProduct = async (
@@ -97,3 +28,71 @@ const updateProduct = async (
     res: Response,
     next: NextFunction
 ) => {};
+
+const createProduct = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { title, price, description, subTitle } = req.body;
+    const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
+
+    const product = (await prisma.product.create({
+        data: {
+            title,
+            price: price * 1,
+            description,
+            subTitle,
+            thumbNail: thumbNailKey,
+        },
+    })) as Product;
+
+    const input = {
+        Bucket: product.id + "somerandom",
+        Key: thumbNailKey,
+    };
+
+    // Cloud work:
+    await createBucket({ Bucket: product.id + "somerandom" });
+    const command = new PutObjectCommand({
+        Bucket: product.id + "somerandom",
+        Key: thumbNailKey,
+        Body: req.file!.buffer,
+    });
+    await s3.send(command);
+
+    const command1 = new GetObjectCommand(input);
+    const url = await getSignedUrl(s3, command1, {});
+
+    res.status(200).json({
+        status: "success",
+        url,
+        product,
+    });
+};
+
+const getProduct = async (req: Request, res: Response, next: NextFunction) => {
+    const { fileLink, bucketName } = req.body;
+    let input;
+
+    if (fileLink.split(".")[1] === "mp4") {
+        input = {
+            Bucket: bucketName,
+            Key: `${fileLink}`,
+            ResponseContentType: "video/mp4",
+        };
+    } else {
+        input = {
+            Bucket: bucketName,
+            Key: `${fileLink}`,
+        };
+    }
+    const command = new GetObjectCommand(input);
+    const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+    res.status(200).json({
+        status: "success",
+        url,
+    });
+};
+
+export { createProduct, getProduct };

@@ -1,9 +1,14 @@
-const productRouter = require("express").Router();
-import upload from "./../awsConfig/multerSetup"; // Multer setup for file uploads
+import express from "express";
+import { createProduct, getProduct } from "../controllers/productController";
+import upload from "../awsConfig/multerSetup";
 
-productRouter.route("/createProduct").post();
-productRouter.route("/getProduct/:id?").get();
-productRouter.route("/getAllProduct/:id?").get();
-productRouter.route("/getAllProductByCategory/:id?").get();
+const productRouter = express.Router();
+
+productRouter
+    .route("/createProduct")
+    .post(upload.single("binary"), createProduct);
+productRouter.route("/getProduct/:id?").get(getProduct);
+// productRouter.route("/getAllProduct/:id?").get();
+// productRouter.route("/getAllProductByCategory/:id?").get();
 
 export default productRouter;

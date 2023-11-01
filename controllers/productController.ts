@@ -3,7 +3,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import prisma from "./../prisma/prismaClientExport";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { createBucket } from "./../awsConfig/bucketControl";
+import {
+    createBucket,
+    deleteBucket,
+    // deleteAllBucketAtOnce,
+} from "./../awsConfig/bucketControl";
 import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 import s3 from "./../awsConfig/credential";
@@ -21,7 +25,14 @@ const deleteProduct = async (
     req: Request,
     res: Response,
     next: NextFunction
-) => {};
+) => {
+    console.log(req.body);
+    const op = await deleteBucket(req.body.bucketName, req.body.keyName);
+    res.end({
+        status: "success",
+        op,
+    });
+};
 
 const updateProduct = async (
     req: Request,
@@ -95,4 +106,4 @@ const getProduct = async (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export { createProduct, getProduct };
+export { createProduct, getProduct, deleteProduct };

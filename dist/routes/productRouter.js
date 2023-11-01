@@ -11,6 +11,5 @@ productRouter
     .route("/createProduct")
     .post(multerSetup_1.default.single("binary"), productController_1.createProduct);
 productRouter.route("/getProduct/:id?").get(productController_1.getProduct);
-// productRouter.route("/getAllProduct/:id?").get();
-// productRouter.route("/getAllProductByCategory/:id?").get();
+productRouter.route("/deleteProduct").post(productController_1.deleteProduct);
 exports.default = productRouter;

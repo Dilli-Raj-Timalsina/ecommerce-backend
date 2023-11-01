@@ -6,6 +6,7 @@ import {
     GetBucketLocationCommand,
     HeadBucketCommand,
     ListObjectsCommand,
+    DeleteObjectCommand,
     DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { Request, Response, NextFunction } from "express";
@@ -32,9 +33,19 @@ const createBucket = async (
 };
 
 const deleteBucket = async (
-    input: DeleteBucketCommand["input"]
+    bucketName: string,
+    keyName: string
 ): Promise<any> => {
-    const command = new DeleteBucketCommand(input);
+    //first delete all the object from the bucket
+    const command1 = new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: keyName,
+    });
+    const response1 = await s3.send(command1);
+    // now delete the empty bucket
+    const command = new DeleteBucketCommand({
+        Bucket: bucketName,
+    });
     const response = await s3.send(command);
     return response;
 };
@@ -60,61 +71,60 @@ const existBucket = async (input: HeadBucketCommand["input"]): Promise<any> => {
     return await s3.send(command);
 };
 
-const deleteAllBucketAtOnce = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-    // First delete all objects inside the bucket:
+// const deleteAllBucketAtOnce = async (
+//     req: Request,
+//     res: Response,
+//     next: NextFunction
+// ): Promise<void> => {
+//     // First delete all objects inside the bucket:
 
-    // Then only bucket deletion tasks start
-    const buckets = await listBuckets({});
-    for (const bucket of buckets.Buckets || []) {
-        // Get an array of keys
-        const command1 = new ListObjectsCommand({
-            Bucket: bucket.Name,
-        });
+//     // Then only bucket deletion tasks start
+//     const buckets = await listBuckets({});
+//     for (const bucket of buckets.Buckets || []) {
+//         // Get an array of keys
+//         const command1 = new ListObjectsCommand({
+//             Bucket: bucket.Name,
+//         });
 
-        const keysArray = await s3.send(command1);
+//         const keysArray = await s3.send(command1);
 
-        // Extract all keys and make an array of inputs
-        if (keysArray.Contents) {
-            const inputs = (keysArray.Contents || []).map((keyfile) => {
-                return {
-                    Key: keyfile.Key,
-                };
-            });
-            // Delete all keys based on an array of inputs
-            const params = {
-                Bucket: bucket.Name,
-                Delete: {
-                    Objects: inputs,
-                    Quiet: false,
-                },
-            };
+//         // Extract all keys and make an array of inputs
+//         if (keysArray.Contents) {
+//             const inputs = (keysArray.Contents || []).map((keyfile) => {
+//                 return {
+//                     Key: keyfile.Key,
+//                 };
+//             });
+//             // Delete all keys based on an array of inputs
+//             const params = {
+//                 Bucket: bucket.Name,
+//                 Delete: {
+//                     Objects: inputs,
+//                     Quiet: false,
+//                 },
+//             };
 
-            // Deletion command executed
-            const command2 = new DeleteObjectsCommand(params);
-            await s3.send(command2);
-        }
-        const input = {
-            Bucket: bucket.Name,
-        };
-        await deleteBucket(input);
-    }
+//             // Deletion command executed
+//             const command2 = new DeleteObjectsCommand(params);
+//             await s3.send(command2);
+//         }
+//         const input = {
+//             Bucket: bucket.Name,
+//         };
+//         await deleteBucket(input);
+//     }
 
-    res.status(204).json({
-        status: "success",
-        message: "successfully deleted",
-    });
-};
+//     res.status(204).json({
+//         status: "success",
+//         message: "successfully deleted",
+//     });
+// };
 
 // Exporting the functions
 export {
     createBucket,
     listBuckets,
-    deleteBucket,
     getBucketLocation,
     existBucket,
-    deleteAllBucketAtOnce,
+    deleteBucket,
 };

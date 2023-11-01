@@ -12,14 +12,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProduct = exports.createProduct = void 0;
+exports.deleteProduct = exports.getProduct = exports.createProduct = void 0;
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientExport"));
 const client_s3_2 = require("@aws-sdk/client-s3");
 const bucketControl_1 = require("./../awsConfig/bucketControl");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
-const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { });
+const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.body);
+    const op = yield (0, bucketControl_1.deleteBucket)(req.body.bucketName, req.body.keyName);
+    res.end({
+        status: "success",
+        op,
+    });
+});
+exports.deleteProduct = deleteProduct;
 const updateProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { });
 const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, price, description, subTitle } = req.body;

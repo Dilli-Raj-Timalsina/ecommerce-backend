@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProduct = exports.getProduct = exports.createProduct = void 0;
+exports.editProduct = exports.deleteProduct = exports.getProduct = exports.createProduct = void 0;
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientExport"));
@@ -20,15 +20,48 @@ const client_s3_2 = require("@aws-sdk/client-s3");
 const bucketControl_1 = require("./../awsConfig/bucketControl");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
 const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
-    const op = yield (0, bucketControl_1.deleteBucket)(req.body.bucketName, req.body.keyName);
-    res.end({
+    // await deleteBucket(req.body.bucketName, req.body.keyName);
+    const id = Number(req.params.id);
+    yield prismaClientExport_1.default.product.delete({
+        where: {
+            id,
+        },
+    });
+    res.status(200).json({
         status: "success",
-        op,
+        message: "Product deleted successfully ",
     });
 });
 exports.deleteProduct = deleteProduct;
-const updateProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { });
+const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = Number(req.params.id);
+    const { title, subTitle, description, price } = req.body;
+    let editable = [
+        { name: "title", value: title },
+        { name: "subTitle", value: subTitle },
+        { name: "description", value: description },
+        { name: "price", value: price },
+    ];
+    let newEditable = {};
+    editable.forEach((element) => {
+        if (element.value != undefined) {
+            //   @ts-ignore
+            newEditable[element.name] = element.value;
+        }
+    });
+    const updated = yield prismaClientExport_1.default.product.update({
+        where: {
+            id,
+        },
+        data: newEditable,
+    });
+    res.status(200).json({
+        status: "success",
+        message: "product updated successfully",
+        updated,
+    });
+});
+exports.editProduct = editProduct;
 const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, price, description, subTitle } = req.body;
     const thumbNailKey = `${Date.now()}-${req.file.originalname}`;

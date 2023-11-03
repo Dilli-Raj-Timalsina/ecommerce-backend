@@ -26,19 +26,51 @@ const deleteProduct = async (
     res: Response,
     next: NextFunction
 ) => {
-    console.log(req.body);
-    const op = await deleteBucket(req.body.bucketName, req.body.keyName);
-    res.end({
+    // await deleteBucket(req.body.bucketName, req.body.keyName);
+
+    const id = Number(req.params.id);
+    await prisma.product.delete({
+        where: {
+            id,
+        },
+    });
+
+    res.status(200).json({
         status: "success",
-        op,
+        message: "Product deleted successfully ",
     });
 };
 
-const updateProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {};
+const editProduct = async (req: Request, res: Response, next: NextFunction) => {
+    const id = Number(req.params.id);
+    const { title, subTitle, description, price } = req.body;
+    let editable = [
+        { name: "title", value: title },
+        { name: "subTitle", value: subTitle },
+        { name: "description", value: description },
+        { name: "price", value: price },
+    ];
+    let newEditable = {};
+    editable.forEach((element) => {
+        if (element.value != undefined) {
+            //   @ts-ignore
+            newEditable[element.name] = element.value;
+        }
+    });
+
+    const updated = await prisma.product.update({
+        where: {
+            id,
+        },
+        data: newEditable,
+    });
+
+    res.status(200).json({
+        status: "success",
+        message: "product updated successfully",
+        updated,
+    });
+};
 
 const createProduct = async (
     req: Request,
@@ -106,4 +138,4 @@ const getProduct = async (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export { createProduct, getProduct, deleteProduct };
+export { createProduct, getProduct, deleteProduct, editProduct };

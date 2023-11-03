@@ -36,18 +36,23 @@ const deleteBucket = async (
     bucketName: string,
     keyName: string
 ): Promise<any> => {
-    //first delete all the object from the bucket
-    const command1 = new DeleteObjectCommand({
-        Bucket: bucketName,
-        Key: keyName,
-    });
-    const response1 = await s3.send(command1);
-    // now delete the empty bucket
-    const command = new DeleteBucketCommand({
-        Bucket: bucketName,
-    });
-    const response = await s3.send(command);
-    return response;
+    try {
+        //first delete all the object from the bucket
+        const command1 = new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: keyName,
+        });
+        const response1 = await s3.send(command1);
+
+        // now delete the empty bucket
+        const command2 = new DeleteBucketCommand({
+            Bucket: bucketName,
+        });
+        const response2 = await s3.send(command2);
+        return response2;
+    } catch (err) {
+        throw new Error(" NoSuchBucket: The specified bucket does not exist");
+    }
 };
 
 const listBuckets = async (

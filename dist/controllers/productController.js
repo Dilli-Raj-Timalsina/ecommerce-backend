@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.editProduct = exports.deleteProduct = exports.getProduct = exports.createProduct = void 0;
+exports.getProductByCategory = exports.getAllProduct = exports.editProduct = exports.deleteProduct = exports.getSingleProduct = exports.createProduct = void 0;
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientExport"));
@@ -63,11 +63,12 @@ const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.editProduct = editProduct;
 const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { title, price, description, subTitle } = req.body;
+    const { title, price, description, subTitle, category } = req.body;
     const thumbNailKey = `${Date.now()}-${req.file.originalname}`;
     const product = (yield prismaClientExport_1.default.product.create({
         data: {
             title,
+            category,
             price: price * 1,
             description,
             subTitle,
@@ -95,27 +96,52 @@ const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     });
 });
 exports.createProduct = createProduct;
-const getProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { fileLink, bucketName } = req.body;
-    let input;
-    if (fileLink.split(".")[1] === "mp4") {
-        input = {
-            Bucket: bucketName,
-            Key: `${fileLink}`,
-            ResponseContentType: "video/mp4",
-        };
-    }
-    else {
-        input = {
-            Bucket: bucketName,
-            Key: `${fileLink}`,
-        };
-    }
-    const command = new client_s3_1.GetObjectCommand(input);
-    const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command, { expiresIn: 360000 });
+const getSingleProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { fileLink, bucketName, id } = req.body;
+    // let input;
+    // if (fileLink.split(".")[1] === "mp4") {
+    //     input = {
+    //         Bucket: bucketName,
+    //         Key: `${fileLink}`,
+    //         ResponseContentType: "video/mp4",
+    //     };
+    // } else {
+    //     input = {
+    //         Bucket: bucketName,
+    //         Key: `${fileLink}`,
+    //     };
+    // }
+    // const command = new GetObjectCommand(input);
+    // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+    const product = yield prismaClientExport_1.default.product.findFirst({
+        where: {
+            id,
+        },
+    });
     res.status(200).json({
         status: "success",
-        url,
+        product,
     });
 });
-exports.getProduct = getProduct;
+exports.getSingleProduct = getSingleProduct;
+const getAllProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const products = yield prismaClientExport_1.default.product.findMany({});
+    res.status(200).json({
+        status: "success",
+        products,
+    });
+});
+exports.getAllProduct = getAllProduct;
+const getProductByCategory = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const category = req.params.id;
+    const products = yield prismaClientExport_1.default.product.findMany({
+        where: {
+            category,
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        products,
+    });
+});
+exports.getProductByCategory = getProductByCategory;

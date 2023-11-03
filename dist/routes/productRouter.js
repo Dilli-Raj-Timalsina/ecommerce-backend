@@ -10,7 +10,9 @@ const productRouter = express_1.default.Router();
 productRouter
     .route("/createProduct")
     .post(multerSetup_1.default.single("binary"), productController_1.createProduct);
-productRouter.route("/getProduct/:id?").get(productController_1.getProduct);
+productRouter.route("/getSingleProduct/:id?").get(productController_1.getSingleProduct);
 productRouter.route("/deleteProduct/:id?").post(productController_1.deleteProduct);
 productRouter.route("/editProduct/:id").patch(productController_1.editProduct);
+productRouter.route("/getAllProducts").get(productController_1.getAllProduct);
+productRouter.route("/getProductByCategory/:id").get(productController_1.getProductByCategory);
 exports.default = productRouter;

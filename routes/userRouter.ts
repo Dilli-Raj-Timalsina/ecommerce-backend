@@ -10,6 +10,6 @@ const userRouter = express.Router();
 // general authentication routes :
 userRouter.route("/signup").post(signupControl);
 userRouter.route("/login").post(loginControl);
-userRouter.route("/updateCart").post(updateCart);
+userRouter.route("/updateCart").patch(updateCart);
 
 export default userRouter;

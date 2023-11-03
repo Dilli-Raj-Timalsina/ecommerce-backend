@@ -77,12 +77,13 @@ const createProduct = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { title, price, description, subTitle } = req.body;
+    const { title, price, description, subTitle, category } = req.body;
     const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
 
     const product = (await prisma.product.create({
         data: {
             title,
+            category,
             price: price * 1,
             description,
             subTitle,
@@ -114,28 +115,74 @@ const createProduct = async (
     });
 };
 
-const getProduct = async (req: Request, res: Response, next: NextFunction) => {
-    const { fileLink, bucketName } = req.body;
-    let input;
+const getSingleProduct = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { fileLink, bucketName, id } = req.body;
+    // let input;
 
-    if (fileLink.split(".")[1] === "mp4") {
-        input = {
-            Bucket: bucketName,
-            Key: `${fileLink}`,
-            ResponseContentType: "video/mp4",
-        };
-    } else {
-        input = {
-            Bucket: bucketName,
-            Key: `${fileLink}`,
-        };
-    }
-    const command = new GetObjectCommand(input);
-    const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+    // if (fileLink.split(".")[1] === "mp4") {
+    //     input = {
+    //         Bucket: bucketName,
+    //         Key: `${fileLink}`,
+    //         ResponseContentType: "video/mp4",
+    //     };
+    // } else {
+    //     input = {
+    //         Bucket: bucketName,
+    //         Key: `${fileLink}`,
+    //     };
+    // }
+    // const command = new GetObjectCommand(input);
+    // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+
+    const product = await prisma.product.findFirst({
+        where: {
+            id,
+        },
+    });
+
     res.status(200).json({
         status: "success",
-        url,
+        product,
     });
 };
 
-export { createProduct, getProduct, deleteProduct, editProduct };
+const getAllProduct = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const products = await prisma.product.findMany({});
+    res.status(200).json({
+        status: "success",
+        products,
+    });
+};
+
+const getProductByCategory = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const category = req.params.id;
+    const products = await prisma.product.findMany({
+        where: {
+            category,
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        products,
+    });
+};
+export {
+    createProduct,
+    getSingleProduct,
+    deleteProduct,
+    editProduct,
+    getAllProduct,
+    getProductByCategory,
+};

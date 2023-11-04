@@ -19,7 +19,8 @@ const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientEx
 const client_s3_2 = require("@aws-sdk/client-s3");
 const bucketControl_1 = require("./../awsConfig/bucketControl");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
-const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
+const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     // await deleteBucket(req.body.bucketName, req.body.keyName);
     const id = Number(req.params.id);
     yield prismaClientExport_1.default.product.delete({
@@ -31,7 +32,7 @@ const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         status: "success",
         message: "Product deleted successfully ",
     });
-});
+}));
 exports.deleteProduct = deleteProduct;
 const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
@@ -62,7 +63,7 @@ const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
     });
 });
 exports.editProduct = editProduct;
-const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, price, description, subTitle, category } = req.body;
     const thumbNailKey = `${Date.now()}-${req.file.originalname}`;
     const product = (yield prismaClientExport_1.default.product.create({
@@ -94,9 +95,9 @@ const createProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         url,
         product,
     });
-});
+}));
 exports.createProduct = createProduct;
-const getSingleProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { fileLink, bucketName, id } = req.body;
     // let input;
     // if (fileLink.split(".")[1] === "mp4") {
@@ -122,17 +123,17 @@ const getSingleProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, f
         status: "success",
         product,
     });
-});
+}));
 exports.getSingleProduct = getSingleProduct;
-const getAllProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const products = yield prismaClientExport_1.default.product.findMany({});
     res.status(200).json({
         status: "success",
         products,
     });
-});
+}));
 exports.getAllProduct = getAllProduct;
-const getProductByCategory = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const getProductByCategory = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const category = req.params.id;
     const products = yield prismaClientExport_1.default.product.findMany({
         where: {
@@ -143,5 +144,5 @@ const getProductByCategory = (req, res, next) => __awaiter(void 0, void 0, void 
         status: "success",
         products,
     });
-});
+}));
 exports.getProductByCategory = getProductByCategory;

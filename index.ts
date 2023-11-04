@@ -9,6 +9,7 @@ import helmet from "helmet";
 import xss from "xss-clean";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
+import globalErrorHandler from "./errors/errorController";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -51,6 +52,8 @@ app.all("*", (req, res, next) => {
     next(new Error(` Can't find ${req.originalUrl} on this server!`));
 });
 
-app.listen(3000, () => {
+app.use(globalErrorHandler);
+
+app.listen(8000, () => {
     console.log(`[server]: Server is running at http://localhost: 3000}`);
 });

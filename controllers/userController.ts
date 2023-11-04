@@ -4,6 +4,8 @@ import { promisify } from "util";
 import { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import prisma from "../prisma/prismaClientExport";
+import catchAsync from "../errors/catchAsync";
+import AppError from "../errors/appError";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -57,52 +59,52 @@ const createSendToken = async (
 };
 
 // 3:) general token leven authentication for both student and teacher
-const generalProtect = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    // a) Getting token and check of it's there
+const generalProtect = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        // a) Getting token and check of it's there
 
-    let token;
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith("Bearer")
-    ) {
-        token = req.headers.authorization.split(" ")[1];
+        let token;
+        if (
+            req.headers.authorization &&
+            req.headers.authorization.startsWith("Bearer")
+        ) {
+            token = req.headers.authorization.split(" ")[1];
+        }
+
+        if (!token) {
+            throw new AppError(
+                "You are not logged in! Please log in to get access.",
+                404
+            );
+        }
+
+        // b) Verification token
+        const decoded = (await promisify(jwt.verify)(token)) as unknown as User;
+
+        // c) Check if user still exists
+        const currentUser = await prisma.user.findFirst({
+            where: { email: decoded.email },
+        });
+
+        if (!currentUser) {
+            throw new AppError(
+                "The user belonging to this token does no longer exist.",
+                401
+            );
+        }
+
+        console.log(currentUser);
+        // GRANT ACCESS TO PROTECTED ROUTE
+        // req.user = "currentUser";
+        next();
     }
-
-    if (!token) {
-        return next(
-            new Error("You are not logged in! Please log in to get access.")
-        );
-    }
-
-    // b) Verification token
-    const decoded = (await promisify(jwt.verify)(token)) as unknown as User;
-
-    // c) Check if user still exists
-    const currentUser = await prisma.user.findFirst({
-        where: { email: decoded.email },
-    });
-
-    if (!currentUser) {
-        return next(
-            new Error("The user belonging to this token does no longer exist.")
-        );
-    }
-
-    console.log(currentUser);
-    // GRANT ACCESS TO PROTECTED ROUTE
-    // req.user = "currentUser";
-    next();
-};
+);
 
 //6:) signup user based on req.body and return jwt via cookie
-const signupControl = async (req: Request, res: Response) => {
+const signupControl = catchAsync(async (req: Request, res: Response) => {
     // check whether user already exist or not/ duplicate email
     if (await prisma.user.findFirst({ where: { email: req.body.email } })) {
-        throw new Error("User Already Exist with this Email");
+        throw new AppError("User Already Exist with this Email", 404);
     }
     let { name, email, password } = req.body;
     password = await bcrypt.hash(password, 10);
@@ -116,37 +118,39 @@ const signupControl = async (req: Request, res: Response) => {
 
     // // if everything is ok :send token to the user
     await createSendToken({ id: user.id, email: user.email }, 200, res);
-};
+});
 
-const loginControl = async (req: Request, res: Response) => {
+const loginControl = catchAsync(async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     //a)check if email or password exist:
     if (!email || !password) {
-        throw new Error("email or password not provided");
+        throw new AppError("email or password not provided", 405);
     }
     // b) Check if user exists && password is correct
     const user = await prisma.user.findFirst({ where: { email: email } });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-        throw new Error("Incorrect email or password");
+        throw new AppError("Incorrect email or password", 405);
     }
     //c) If everything is ok: send token to the logged in user
     await createSendToken({ id: user.id, email: user.email }, 200, res);
-};
+});
 
-const updateCart = async (req: Request, res: Response, next: NextFunction) => {
-    const { courseList, userId } = req.body;
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
-            cart: courseList,
-        },
-    });
-    res.status(200).json({
-        status: "success",
-        message: "succesfully updated cart",
-    });
-};
+const updateCart = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { courseList, userId } = req.body;
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                cart: courseList,
+            },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "succesfully updated cart",
+        });
+    }
+);
 
 export { signupControl, loginControl, updateCart };

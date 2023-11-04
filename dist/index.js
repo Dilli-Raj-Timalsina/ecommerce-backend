@@ -14,6 +14,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const xss_clean_1 = __importDefault(require("xss-clean"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const errorController_1 = __importDefault(require("./errors/errorController"));
 dotenv_1.default.config({ path: __dirname + "/.env" });
 const corsOptions = {
     origin: "http://localhost:3000",
@@ -40,6 +41,7 @@ app.use("/", (req, res) => {
 app.all("*", (req, res, next) => {
     next(new Error(` Can't find ${req.originalUrl} on this server!`));
 });
-app.listen(3000, () => {
+app.use(errorController_1.default);
+app.listen(8000, () => {
     console.log(`[server]: Server is running at http://localhost: 3000}`);
 });

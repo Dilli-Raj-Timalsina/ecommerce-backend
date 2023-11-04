@@ -11,6 +11,8 @@ import {
 import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 import s3 from "./../awsConfig/credential";
+import catchAsync from "../errors/catchAsync";
+import AppError from "../errors/appError";
 
 type Product = {
     id: number;
@@ -21,26 +23,23 @@ type Product = {
     thumbNail: string;
 };
 
-const deleteProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    // await deleteBucket(req.body.bucketName, req.body.keyName);
+const deleteProduct = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        // await deleteBucket(req.body.bucketName, req.body.keyName);
 
-    const id = Number(req.params.id);
-    await prisma.product.delete({
-        where: {
-            id,
-        },
-    });
+        const id = Number(req.params.id);
+        await prisma.product.delete({
+            where: {
+                id,
+            },
+        });
 
-    res.status(200).json({
-        status: "success",
-        message: "Product deleted successfully ",
-    });
-};
-
+        res.status(200).json({
+            status: "success",
+            message: "Product deleted successfully ",
+        });
+    }
+);
 const editProduct = async (req: Request, res: Response, next: NextFunction) => {
     const id = Number(req.params.id);
     const { title, subTitle, description, price } = req.body;
@@ -72,112 +71,104 @@ const editProduct = async (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-const createProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const { title, price, description, subTitle, category } = req.body;
-    const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
+const createProduct = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { title, price, description, subTitle, category } = req.body;
+        const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
 
-    const product = (await prisma.product.create({
-        data: {
-            title,
-            category,
-            price: price * 1,
-            description,
-            subTitle,
-            thumbNail: thumbNailKey,
-        },
-    })) as Product;
+        const product = (await prisma.product.create({
+            data: {
+                title,
+                category,
+                price: price * 1,
+                description,
+                subTitle,
+                thumbNail: thumbNailKey,
+            },
+        })) as Product;
 
-    const input = {
-        Bucket: product.id + "somerandom",
-        Key: thumbNailKey,
-    };
+        const input = {
+            Bucket: product.id + "somerandom",
+            Key: thumbNailKey,
+        };
 
-    // Cloud work:
-    await createBucket({ Bucket: product.id + "somerandom" });
-    const command = new PutObjectCommand({
-        Bucket: product.id + "somerandom",
-        Key: thumbNailKey,
-        Body: req.file!.buffer,
-    });
-    await s3.send(command);
+        // Cloud work:
+        await createBucket({ Bucket: product.id + "somerandom" });
+        const command = new PutObjectCommand({
+            Bucket: product.id + "somerandom",
+            Key: thumbNailKey,
+            Body: req.file!.buffer,
+        });
+        await s3.send(command);
 
-    const command1 = new GetObjectCommand(input);
-    const url = await getSignedUrl(s3, command1, {});
+        const command1 = new GetObjectCommand(input);
+        const url = await getSignedUrl(s3, command1, {});
 
-    res.status(200).json({
-        status: "success",
-        url,
-        product,
-    });
-};
+        res.status(200).json({
+            status: "success",
+            url,
+            product,
+        });
+    }
+);
 
-const getSingleProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const { fileLink, bucketName, id } = req.body;
-    // let input;
+const getSingleProduct = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { fileLink, bucketName, id } = req.body;
+        // let input;
 
-    // if (fileLink.split(".")[1] === "mp4") {
-    //     input = {
-    //         Bucket: bucketName,
-    //         Key: `${fileLink}`,
-    //         ResponseContentType: "video/mp4",
-    //     };
-    // } else {
-    //     input = {
-    //         Bucket: bucketName,
-    //         Key: `${fileLink}`,
-    //     };
-    // }
-    // const command = new GetObjectCommand(input);
-    // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+        // if (fileLink.split(".")[1] === "mp4") {
+        //     input = {
+        //         Bucket: bucketName,
+        //         Key: `${fileLink}`,
+        //         ResponseContentType: "video/mp4",
+        //     };
+        // } else {
+        //     input = {
+        //         Bucket: bucketName,
+        //         Key: `${fileLink}`,
+        //     };
+        // }
+        // const command = new GetObjectCommand(input);
+        // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
 
-    const product = await prisma.product.findFirst({
-        where: {
-            id,
-        },
-    });
+        const product = await prisma.product.findFirst({
+            where: {
+                id,
+            },
+        });
 
-    res.status(200).json({
-        status: "success",
-        product,
-    });
-};
+        res.status(200).json({
+            status: "success",
+            product,
+        });
+    }
+);
 
-const getAllProduct = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const products = await prisma.product.findMany({});
-    res.status(200).json({
-        status: "success",
-        products,
-    });
-};
+const getAllProduct = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const products = await prisma.product.findMany({});
+        res.status(200).json({
+            status: "success",
+            products,
+        });
+    }
+);
 
-const getProductByCategory = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    const category = req.params.id;
-    const products = await prisma.product.findMany({
-        where: {
-            category,
-        },
-    });
-    res.status(200).json({
-        status: "success",
-        products,
-    });
-};
+const getProductByCategory = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const category = req.params.id;
+        const products = await prisma.product.findMany({
+            where: {
+                category,
+            },
+        });
+        res.status(200).json({
+            status: "success",
+            products,
+        });
+    }
+);
 export {
     createProduct,
     getSingleProduct,

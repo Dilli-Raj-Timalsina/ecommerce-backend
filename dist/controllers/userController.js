@@ -18,6 +18,8 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
 const dotenv_1 = __importDefault(require("dotenv"));
 const prismaClientExport_1 = __importDefault(require("../prisma/prismaClientExport"));
+const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
+const appError_1 = __importDefault(require("../errors/appError"));
 dotenv_1.default.config({ path: __dirname + "/.env" });
 // 1:) return new jwt based on passed payload
 const signToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
@@ -53,7 +55,7 @@ const createSendToken = (user, statusCode, res) => __awaiter(void 0, void 0, voi
     });
 });
 // 3:) general token leven authentication for both student and teacher
-const generalProtect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const generalProtect = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     // a) Getting token and check of it's there
     let token;
     if (req.headers.authorization &&
@@ -61,7 +63,7 @@ const generalProtect = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         token = req.headers.authorization.split(" ")[1];
     }
     if (!token) {
-        return next(new Error("You are not logged in! Please log in to get access."));
+        throw new appError_1.default("You are not logged in! Please log in to get access.", 404);
     }
     // b) Verification token
     const decoded = (yield (0, util_1.promisify)(jsonwebtoken_1.default.verify)(token));
@@ -70,18 +72,18 @@ const generalProtect = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         where: { email: decoded.email },
     });
     if (!currentUser) {
-        return next(new Error("The user belonging to this token does no longer exist."));
+        throw new appError_1.default("The user belonging to this token does no longer exist.", 401);
     }
     console.log(currentUser);
     // GRANT ACCESS TO PROTECTED ROUTE
     // req.user = "currentUser";
     next();
-});
+}));
 //6:) signup user based on req.body and return jwt via cookie
-const signupControl = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const signupControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // check whether user already exist or not/ duplicate email
     if (yield prismaClientExport_1.default.user.findFirst({ where: { email: req.body.email } })) {
-        throw new Error("User Already Exist with this Email");
+        throw new appError_1.default("User Already Exist with this Email", 404);
     }
     let { name, email, password } = req.body;
     password = yield bcrypt_1.default.hash(password, 10);
@@ -94,24 +96,24 @@ const signupControl = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }));
     // // if everything is ok :send token to the user
     yield createSendToken({ id: user.id, email: user.email }, 200, res);
-});
+}));
 exports.signupControl = signupControl;
-const loginControl = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const loginControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     //a)check if email or password exist:
     if (!email || !password) {
-        throw new Error("email or password not provided");
+        throw new appError_1.default("email or password not provided", 405);
     }
     // b) Check if user exists && password is correct
     const user = yield prismaClientExport_1.default.user.findFirst({ where: { email: email } });
     if (!user || !(yield bcrypt_1.default.compare(password, user.password))) {
-        throw new Error("Incorrect email or password");
+        throw new appError_1.default("Incorrect email or password", 405);
     }
     //c) If everything is ok: send token to the logged in user
     yield createSendToken({ id: user.id, email: user.email }, 200, res);
-});
+}));
 exports.loginControl = loginControl;
-const updateCart = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { courseList, userId } = req.body;
     yield prismaClientExport_1.default.user.update({
         where: { id: userId },
@@ -123,5 +125,5 @@ const updateCart = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         status: "success",
         message: "succesfully updated cart",
     });
-});
+}));
 exports.updateCart = updateCart;

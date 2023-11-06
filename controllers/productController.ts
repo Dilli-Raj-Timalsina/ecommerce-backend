@@ -114,33 +114,25 @@ const createProduct = catchAsync(
 
 const getSingleProduct = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { fileLink, bucketName, id } = req.body;
-        // let input;
-
-        // if (fileLink.split(".")[1] === "mp4") {
-        //     input = {
-        //         Bucket: bucketName,
-        //         Key: `${fileLink}`,
-        //         ResponseContentType: "video/mp4",
-        //     };
-        // } else {
-        //     input = {
-        //         Bucket: bucketName,
-        //         Key: `${fileLink}`,
-        //     };
-        // }
-        // const command = new GetObjectCommand(input);
-        // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+        let productId = Number(req.params.id);
 
         const product = await prisma.product.findFirst({
             where: {
-                id,
+                id: productId,
             },
         });
+        let input;
+        input = {
+            Bucket: productId + "somerandom",
+            Key: `${product?.thumbNail}`,
+        };
+        const command = new GetObjectCommand(input);
+        const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
 
         res.status(200).json({
             status: "success",
             product,
+            url,
         });
     }
 );

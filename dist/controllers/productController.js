@@ -98,30 +98,23 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
 }));
 exports.createProduct = createProduct;
 const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { fileLink, bucketName, id } = req.body;
-    // let input;
-    // if (fileLink.split(".")[1] === "mp4") {
-    //     input = {
-    //         Bucket: bucketName,
-    //         Key: `${fileLink}`,
-    //         ResponseContentType: "video/mp4",
-    //     };
-    // } else {
-    //     input = {
-    //         Bucket: bucketName,
-    //         Key: `${fileLink}`,
-    //     };
-    // }
-    // const command = new GetObjectCommand(input);
-    // const url = await getSignedUrl(s3, command, { expiresIn: 360000 });
+    let productId = Number(req.params.id);
     const product = yield prismaClientExport_1.default.product.findFirst({
         where: {
-            id,
+            id: productId,
         },
     });
+    let input;
+    input = {
+        Bucket: productId + "somerandom",
+        Key: `${product === null || product === void 0 ? void 0 : product.thumbNail}`,
+    };
+    const command = new client_s3_1.GetObjectCommand(input);
+    const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command, { expiresIn: 360000 });
     res.status(200).json({
         status: "success",
         product,
+        url,
     });
 }));
 exports.getSingleProduct = getSingleProduct;

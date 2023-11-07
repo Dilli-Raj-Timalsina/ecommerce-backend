@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProductByCategory = exports.getAllProduct = exports.editProduct = exports.deleteProduct = exports.getSingleProduct = exports.createProduct = void 0;
+exports.uploadSideImages = exports.getProductByCategory = exports.getAllProduct = exports.editProduct = exports.deleteProduct = exports.getSingleProduct = exports.createProduct = void 0;
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientExport"));
@@ -20,8 +20,15 @@ const client_s3_2 = require("@aws-sdk/client-s3");
 const bucketControl_1 = require("./../awsConfig/bucketControl");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
 const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
+const returnInputAccMimetype = (file, bucketName, key) => {
+    return {
+        Bucket: bucketName,
+        Key: key,
+        Body: file.buffer,
+    };
+};
 const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    // await deleteBucket(req.body.bucketName, req.body.keyName);
+    yield (0, bucketControl_1.deleteBucket)(req.body.bucketName, req.body.keyName);
     const id = Number(req.params.id);
     yield prismaClientExport_1.default.product.delete({
         where: {
@@ -97,6 +104,30 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
     });
 }));
 exports.createProduct = createProduct;
+const uploadSideImages = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    let productId = Number(req.params.id);
+    let sideImages = [];
+    //   @ts-ignore
+    req.files.forEach((file) => {
+        sideImages.push(file.originalname);
+    });
+    const product = yield prismaClientExport_1.default.product.update({
+        where: { id: productId },
+        data: {
+            sideImages: sideImages,
+        },
+    });
+    //@ts-ignore
+    const inputs = req.files.map((file, index) => {
+        return returnInputAccMimetype(file, product.id + "somerandom", Date.now.toString() + sideImages[index]);
+    });
+    yield Promise.all(inputs.map((input) => credential_1.default.send(new client_s3_2.PutObjectCommand(input))));
+    res.status(200).json({
+        status: "Success",
+        product,
+    });
+}));
+exports.uploadSideImages = uploadSideImages;
 const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     let productId = Number(req.params.id);
     const product = yield prismaClientExport_1.default.product.findFirst({

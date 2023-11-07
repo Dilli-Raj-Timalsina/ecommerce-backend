@@ -8,6 +8,9 @@ const productController_1 = require("../controllers/productController");
 const multerSetup_1 = __importDefault(require("../awsConfig/multerSetup"));
 const productRouter = express_1.default.Router();
 productRouter
+    .route("/uploadSideImages")
+    .post(multerSetup_1.default.array("binary", 15), productController_1.uploadSideImages);
+productRouter
     .route("/createProduct")
     .post(multerSetup_1.default.single("binary"), productController_1.createProduct);
 productRouter.route("/getSingleProduct/:id?").get(productController_1.getSingleProduct);

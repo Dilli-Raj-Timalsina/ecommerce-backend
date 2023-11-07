@@ -25,13 +25,15 @@ model User {
 }
 
 model Product {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   subTitle    String?
   price       Float
   description String?
-  category    String  @unique
+  category    String    @unique
   thumbNail   String
+  sideImages  String[]
+  createdDate DateTime?
 
   @@map("products")
 }

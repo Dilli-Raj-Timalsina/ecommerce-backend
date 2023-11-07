@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
 import prisma from "./../prisma/prismaClientExport";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
@@ -13,6 +13,7 @@ import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import s3 from "./../awsConfig/credential";
 import catchAsync from "../errors/catchAsync";
 import AppError from "../errors/appError";
+import { string } from "zod";
 
 type Product = {
     id: number;
@@ -23,9 +24,17 @@ type Product = {
     thumbNail: string;
 };
 
+const returnInputAccMimetype = (file: any, bucketName: any, key: any) => {
+    return {
+        Bucket: bucketName,
+        Key: key,
+        Body: file.buffer,
+    };
+};
+
 const deleteProduct = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        // await deleteBucket(req.body.bucketName, req.body.keyName);
+        await deleteBucket(req.body.bucketName, req.body.keyName);
 
         const id = Number(req.params.id);
         await prisma.product.delete({
@@ -112,6 +121,43 @@ const createProduct = catchAsync(
     }
 );
 
+const uploadSideImages = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        let productId = Number(req.params.id);
+        let sideImages: string[] = [];
+        //   @ts-ignore
+        req.files.forEach((file: Express.Multer.File) => {
+            sideImages.push(file.originalname);
+        });
+
+        const product = await prisma.product.update({
+            where: { id: productId },
+            data: {
+                sideImages: sideImages,
+            },
+        });
+        //@ts-ignore
+        const inputs = req.files.map((file: Express.Multer.File, index) => {
+            return returnInputAccMimetype(
+                file,
+                product.id + "somerandom",
+                Date.now.toString() + sideImages[index]
+            );
+        });
+
+        await Promise.all(
+            inputs.map((input: PutObjectCommandInput) =>
+                s3.send(new PutObjectCommand(input))
+            )
+        );
+
+        res.status(200).json({
+            status: "Success",
+            product,
+        });
+    }
+);
+
 const getSingleProduct = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         let productId = Number(req.params.id);
@@ -168,4 +214,5 @@ export {
     editProduct,
     getAllProduct,
     getProductByCategory,
+    uploadSideImages,
 };

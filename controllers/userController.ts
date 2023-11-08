@@ -153,4 +153,21 @@ const updateCart = catchAsync(
     }
 );
 
-export { signupControl, loginControl, updateCart };
+const getCartItem = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const product = await prisma.product.findMany({
+            where: {
+                id: {
+                    in: req.body.cart,
+                },
+            },
+        });
+
+        res.status(200).json({
+            status: "success",
+            product,
+        });
+    }
+);
+
+export { signupControl, loginControl, updateCart, getCartItem };

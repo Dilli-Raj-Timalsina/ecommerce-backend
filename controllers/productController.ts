@@ -81,50 +81,53 @@ const editProduct = async (req: Request, res: Response, next: NextFunction) => {
 
 const createProduct = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { title, price, description, subTitle, category } = req.body;
-        const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
-        //1:) create db product
-        const product = (await prisma.product.create({
-            data: {
-                title,
-                category,
-                price: price * 1,
-                description,
-                subTitle,
-                thumbNail: thumbNailKey,
-            },
-        })) as Product;
+        console.log(req.body);
+        console.log(req.file);
+        console.log(req.files);
+        // const { title, price, description, subTitle, category } = req.body;
+        // const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
+        // //1:) create db product
+        // const product = (await prisma.product.create({
+        //     data: {
+        //         title,
+        //         category,
+        //         price: price * 1,
+        //         description,
+        //         subTitle,
+        //         thumbNail: thumbNailKey,
+        //     },
+        // })) as Product;
 
-        // Cloud work:
+        // // Cloud work:
 
-        await createBucket({ Bucket: product.id + "somerandom" });
-        const command = new PutObjectCommand({
-            Bucket: product.id + "somerandom",
-            Key: thumbNailKey,
-            Body: req.file!.buffer,
-        });
-        await s3.send(command);
+        // await createBucket({ Bucket: product.id + "somerandom" });
+        // const command = new PutObjectCommand({
+        //     Bucket: product.id + "somerandom",
+        //     Key: thumbNailKey,
+        //     Body: req.file!.buffer,
+        // });
+        // await s3.send(command);
 
-        const input1 = {
-            Bucket: product.id + "somerandom",
-            Key: thumbNailKey,
-        };
+        // const input1 = {
+        //     Bucket: product.id + "somerandom",
+        //     Key: thumbNailKey,
+        // };
 
-        const command1 = new GetObjectCommand(input1);
-        const url = await getSignedUrl(s3, command1, {});
+        // const command1 = new GetObjectCommand(input1);
+        // const url = await getSignedUrl(s3, command1, {});
 
-        const updated = await prisma.product.update({
-            where: {
-                id: product.id,
-            },
-            data: {
-                thumbNail: url,
-            },
-        });
+        // const updated = await prisma.product.update({
+        //     where: {
+        //         id: product.id,
+        //     },
+        //     data: {
+        //         thumbNail: url,
+        //     },
+        // });
 
         res.status(200).json({
             status: "success",
-            updated,
+            // updated,
         });
     }
 );

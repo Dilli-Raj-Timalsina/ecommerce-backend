@@ -197,8 +197,6 @@ const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter
     res.status(200).json({
         status: "success",
         product,
-        thumbNailURL,
-        sideImageURL,
     });
 }));
 exports.getSingleProduct = getSingleProduct;

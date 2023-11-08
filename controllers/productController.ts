@@ -236,8 +236,6 @@ const getSingleProduct = catchAsync(
         res.status(200).json({
             status: "success",
             product,
-            thumbNailURL,
-            sideImageURL,
         });
     }
 );

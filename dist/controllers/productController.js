@@ -20,6 +20,7 @@ const client_s3_2 = require("@aws-sdk/client-s3");
 const bucketControl_1 = require("./../awsConfig/bucketControl");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
 const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
+const appError_1 = __importDefault(require("../errors/appError"));
 const returnInputAccMimetype = (file, bucketName, key) => {
     return {
         Bucket: bucketName,
@@ -28,8 +29,8 @@ const returnInputAccMimetype = (file, bucketName, key) => {
     };
 };
 const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, bucketControl_1.deleteBucket)(req.body.bucketName, req.body.keyName);
     const id = Number(req.params.id);
+    const resp = yield (0, bucketControl_1.deleteBucket)(id + "somerandom");
     yield prismaClientExport_1.default.product.delete({
         where: {
             id,
@@ -37,7 +38,8 @@ const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
     });
     res.status(200).json({
         status: "success",
-        message: "Product deleted successfully ",
+        message: "Product deleted successfully !",
+        resp,
     });
 }));
 exports.deleteProduct = deleteProduct;
@@ -73,6 +75,7 @@ exports.editProduct = editProduct;
 const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, price, description, subTitle, category } = req.body;
     const thumbNailKey = `${Date.now()}-${req.file.originalname}`;
+    //1:) create db product
     const product = (yield prismaClientExport_1.default.product.create({
         data: {
             title,
@@ -83,10 +86,6 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
             thumbNail: thumbNailKey,
         },
     }));
-    const input = {
-        Bucket: product.id + "somerandom",
-        Key: thumbNailKey,
-    };
     // Cloud work:
     yield (0, bucketControl_1.createBucket)({ Bucket: product.id + "somerandom" });
     const command = new client_s3_2.PutObjectCommand({
@@ -95,12 +94,23 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
         Body: req.file.buffer,
     });
     yield credential_1.default.send(command);
-    const command1 = new client_s3_1.GetObjectCommand(input);
+    const input1 = {
+        Bucket: product.id + "somerandom",
+        Key: thumbNailKey,
+    };
+    const command1 = new client_s3_1.GetObjectCommand(input1);
     const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {});
+    const updated = yield prismaClientExport_1.default.product.update({
+        where: {
+            id: product.id,
+        },
+        data: {
+            thumbNail: url,
+        },
+    });
     res.status(200).json({
         status: "success",
-        url,
-        product,
+        updated,
     });
 }));
 exports.createProduct = createProduct;
@@ -119,12 +129,37 @@ const uploadSideImages = (0, catchAsync_1.default)((req, res, next) => __awaiter
     });
     //@ts-ignore
     const inputs = req.files.map((file, index) => {
-        return returnInputAccMimetype(file, product.id + "somerandom", Date.now.toString() + sideImages[index]);
+        let bucketName = Date.now() + sideImages[index];
+        sideImages[index] = bucketName;
+        return returnInputAccMimetype(file, product.id + "somerandom", bucketName);
     });
     yield Promise.all(inputs.map((input) => credential_1.default.send(new client_s3_2.PutObjectCommand(input))));
+    //get all url of side image
+    let sideImagesURL = [];
+    for (const value of sideImages) {
+        const input1 = {
+            Bucket: product.id + "somerandom",
+            Key: value,
+        };
+        const command1 = new client_s3_1.GetObjectCommand(input1);
+        const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {});
+        sideImagesURL.push(url);
+        console.log(sideImagesURL, "test1");
+    }
+    let updatedProduct;
+    if (sideImagesURL.length >= 1) {
+        updatedProduct = yield prismaClientExport_1.default.product.update({
+            where: {
+                id: product.id,
+            },
+            data: {
+                sideImages: sideImagesURL,
+            },
+        });
+    }
     res.status(200).json({
         status: "Success",
-        product,
+        updatedProduct: updatedProduct,
     });
 }));
 exports.uploadSideImages = uploadSideImages;
@@ -135,17 +170,35 @@ const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter
             id: productId,
         },
     });
+    if (!product) {
+        throw new appError_1.default(`Product with ${productId} Product ID doesnot exist`, 500);
+    }
     let input;
     input = {
         Bucket: productId + "somerandom",
         Key: `${product === null || product === void 0 ? void 0 : product.thumbNail}`,
     };
     const command = new client_s3_1.GetObjectCommand(input);
-    const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command, { expiresIn: 360000 });
+    const thumbNailURL = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command);
+    //get sideImageURL now
+    let sideImageURL = [];
+    if (product.sideImages.length >= 1) {
+        const objectList = yield (0, bucketControl_1.listObjects)(productId + "somerandom");
+        objectList.forEach((value) => __awaiter(void 0, void 0, void 0, function* () {
+            const input1 = {
+                Bucket: productId + "somerandom",
+                Key: value.Key,
+            };
+            const command = new client_s3_1.GetObjectCommand(input1);
+            const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command);
+            sideImageURL.push(url);
+        }));
+    }
     res.status(200).json({
         status: "success",
         product,
-        url,
+        thumbNailURL,
+        sideImageURL,
     });
 }));
 exports.getSingleProduct = getSingleProduct;

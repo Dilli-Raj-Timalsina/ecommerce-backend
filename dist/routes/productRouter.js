@@ -8,7 +8,7 @@ const productController_1 = require("../controllers/productController");
 const multerSetup_1 = __importDefault(require("../awsConfig/multerSetup"));
 const productRouter = express_1.default.Router();
 productRouter
-    .route("/uploadSideImages")
+    .route("/uploadSideImages/:id?")
     .post(multerSetup_1.default.array("binary", 15), productController_1.uploadSideImages);
 productRouter
     .route("/createProduct")

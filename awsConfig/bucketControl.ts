@@ -1,28 +1,16 @@
-import { S3Client } from "@aws-sdk/client-s3";
 import {
-    ListBucketsCommand,
     CreateBucketCommand,
     DeleteBucketCommand,
-    GetBucketLocationCommand,
-    HeadBucketCommand,
     ListObjectsCommand,
-    DeleteObjectCommand,
     DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
-import { Request, Response, NextFunction } from "express";
 
 import s3 from "./credential";
+import AppError from "../errors/appError";
 
-interface Configuration {
-    region?: string;
-    credentials?: {
-        accessKeyId: string | undefined;
-        secretAccessKey: string | undefined;
-    };
-}
-
-// All bucket related operations: CRUD operations
-// All the below methods take input parameter which defines the input format and send a request to s3
+type KeyValue = {
+    Key: string;
+};
 
 const createBucket = async (
     input: CreateBucketCommand["input"]
@@ -32,104 +20,67 @@ const createBucket = async (
     return response;
 };
 
-const deleteBucket = async (
-    bucketName: string,
-    keyName: string
-): Promise<any> => {
+const deleteBucket = async (bucketName: string): Promise<any> => {
     try {
-        //first delete all the object from the bucket
-        const command1 = new DeleteObjectCommand({
+        //1:)list all object key using bucketName
+        const input1 = {
             Bucket: bucketName,
-            Key: keyName,
-        });
+        };
+        const command1 = new ListObjectsCommand(input1);
         const response1 = await s3.send(command1);
 
-        // now delete the empty bucket
-        const command2 = new DeleteBucketCommand({
+        //2:) if object exist in bucket then delete all objects
+        if (response1.Contents) {
+            const objectList: KeyValue[] = [];
+            response1.Contents!.forEach((element) => {
+                objectList.push({
+                    Key: element.Key!,
+                });
+            });
+
+            const command2 = new DeleteObjectsCommand({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objectList,
+                },
+            });
+            await s3.send(command2);
+        }
+        //3:) finally now delete the empty bucket
+        const command3 = new DeleteBucketCommand({
             Bucket: bucketName,
         });
-        const response2 = await s3.send(command2);
-        return response2;
+        const response3 = await s3.send(command3);
+        return response3;
     } catch (err) {
-        throw new Error(" NoSuchBucket: The specified bucket does not exist");
+        throw new AppError(
+            " NoSuchBucket: The specified bucket does not exist",
+            500
+        );
     }
 };
 
-const listBuckets = async (
-    input: ListBucketsCommand["input"]
-): Promise<any> => {
-    const command = new ListBucketsCommand(input);
-    const response = await s3.send(command);
-    return response;
+const listObjects = async (bucketName: string): Promise<KeyValue[]> => {
+    try {
+        //1:)list all object key using bucketName
+        const input1 = {
+            Bucket: bucketName,
+        };
+        const command1 = new ListObjectsCommand(input1);
+        const response1 = await s3.send(command1);
+
+        const objectList: KeyValue[] = [];
+        if (response1.Contents) {
+            response1.Contents!.forEach((element) => {
+                objectList.push({
+                    Key: element.Key!,
+                });
+            });
+        }
+        return objectList;
+    } catch (err) {
+        throw new AppError("Bucket doesnot exist", 500);
+    }
 };
 
-const getBucketLocation = async (
-    input: GetBucketLocationCommand["input"]
-): Promise<any> => {
-    const command = new GetBucketLocationCommand(input);
-    const response = await s3.send(command);
-    return response;
-};
-
-const existBucket = async (input: HeadBucketCommand["input"]): Promise<any> => {
-    const command = new HeadBucketCommand(input);
-    return await s3.send(command);
-};
-
-// const deleteAllBucketAtOnce = async (
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-// ): Promise<void> => {
-//     // First delete all objects inside the bucket:
-
-//     // Then only bucket deletion tasks start
-//     const buckets = await listBuckets({});
-//     for (const bucket of buckets.Buckets || []) {
-//         // Get an array of keys
-//         const command1 = new ListObjectsCommand({
-//             Bucket: bucket.Name,
-//         });
-
-//         const keysArray = await s3.send(command1);
-
-//         // Extract all keys and make an array of inputs
-//         if (keysArray.Contents) {
-//             const inputs = (keysArray.Contents || []).map((keyfile) => {
-//                 return {
-//                     Key: keyfile.Key,
-//                 };
-//             });
-//             // Delete all keys based on an array of inputs
-//             const params = {
-//                 Bucket: bucket.Name,
-//                 Delete: {
-//                     Objects: inputs,
-//                     Quiet: false,
-//                 },
-//             };
-
-//             // Deletion command executed
-//             const command2 = new DeleteObjectsCommand(params);
-//             await s3.send(command2);
-//         }
-//         const input = {
-//             Bucket: bucket.Name,
-//         };
-//         await deleteBucket(input);
-//     }
-
-//     res.status(204).json({
-//         status: "success",
-//         message: "successfully deleted",
-//     });
-// };
-
-// Exporting the functions
-export {
-    createBucket,
-    listBuckets,
-    getBucketLocation,
-    existBucket,
-    deleteBucket,
-};
+export { createBucket, listObjects, deleteBucket };

@@ -13,7 +13,7 @@ import upload from "../awsConfig/multerSetup";
 const productRouter = express.Router();
 
 productRouter
-    .route("/uploadSideImages")
+    .route("/uploadSideImages/:id?")
     .post(upload.array("binary", 15), uploadSideImages);
 
 productRouter

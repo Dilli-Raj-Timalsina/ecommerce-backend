@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" TEXT,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "token" TEXT,
@@ -20,7 +20,10 @@ CREATE TABLE "products" (
     "subTitle" TEXT,
     "price" DOUBLE PRECISION NOT NULL,
     "description" TEXT,
+    "category" TEXT NOT NULL,
     "thumbNail" TEXT NOT NULL,
+    "sideImages" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "createdDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );

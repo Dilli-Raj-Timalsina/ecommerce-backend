@@ -10,4 +10,5 @@ const userRouter = express_1.default.Router();
 userRouter.route("/signup").post(userController_1.signupControl);
 userRouter.route("/login").post(userController_1.loginControl);
 userRouter.route("/updateCart").patch(userController_1.updateCart);
+userRouter.route("/getCartItem").post(userController_1.getCartItem);
 exports.default = userRouter;

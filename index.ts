@@ -55,5 +55,5 @@ app.all("*", (req, res, next) => {
 app.use(globalErrorHandler);
 
 app.listen(8000, () => {
-    console.log(`[server]: Server is running at http://localhost: 3000}`);
+    console.log(`[server]: Server is running at http://localhost: 8000}`);
 });

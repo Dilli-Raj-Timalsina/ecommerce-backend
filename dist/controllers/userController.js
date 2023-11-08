@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateCart = exports.loginControl = exports.signupControl = void 0;
+exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -127,3 +127,17 @@ const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
     });
 }));
 exports.updateCart = updateCart;
+const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const product = yield prismaClientExport_1.default.product.findMany({
+        where: {
+            id: {
+                in: req.body.cart,
+            },
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        product,
+    });
+}));
+exports.getCartItem = getCartItem;

@@ -31,16 +31,17 @@ const nofifyPurchase = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { name, email, subject, message, contact } = req.body;
+    const { name, email, location, phone } = req.body;
 
     const options = {
         email: email,
-        subject: subject,
+        subject: "Order confirmed",
         message: ` 
           Name : ${name} ,
           Email :${email} ,
-          contact : ${contact} ,
-          message : ${message},
+          phone : ${phone} ,
+          location : ${location},
+           
          `,
     };
 

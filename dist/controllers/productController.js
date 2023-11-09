@@ -73,47 +73,44 @@ const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.editProduct = editProduct;
 const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
-    console.log(req.file);
-    console.log(req.files);
-    // const { title, price, description, subTitle, category } = req.body;
-    // const thumbNailKey: string = `${Date.now()}-${req.file!.originalname}`;
-    // //1:) create db product
-    // const product = (await prisma.product.create({
-    //     data: {
-    //         title,
-    //         category,
-    //         price: price * 1,
-    //         description,
-    //         subTitle,
-    //         thumbNail: thumbNailKey,
-    //     },
-    // })) as Product;
-    // // Cloud work:
-    // await createBucket({ Bucket: product.id + "somerandom" });
-    // const command = new PutObjectCommand({
-    //     Bucket: product.id + "somerandom",
-    //     Key: thumbNailKey,
-    //     Body: req.file!.buffer,
-    // });
-    // await s3.send(command);
-    // const input1 = {
-    //     Bucket: product.id + "somerandom",
-    //     Key: thumbNailKey,
-    // };
-    // const command1 = new GetObjectCommand(input1);
-    // const url = await getSignedUrl(s3, command1, {});
-    // const updated = await prisma.product.update({
-    //     where: {
-    //         id: product.id,
-    //     },
-    //     data: {
-    //         thumbNail: url,
-    //     },
-    // });
+    const { title, price, description, subTitle, category } = req.body;
+    const thumbNailKey = `${Date.now()}-${req.file.originalname}`;
+    //1:) create db product
+    const product = (yield prismaClientExport_1.default.product.create({
+        data: {
+            title,
+            category,
+            price: price * 1,
+            description,
+            subTitle,
+            thumbNail: thumbNailKey,
+        },
+    }));
+    // Cloud work:
+    yield (0, bucketControl_1.createBucket)({ Bucket: product.id + "somerandom" });
+    const command = new client_s3_2.PutObjectCommand({
+        Bucket: product.id + "somerandom",
+        Key: thumbNailKey,
+        Body: req.file.buffer,
+    });
+    yield credential_1.default.send(command);
+    const input1 = {
+        Bucket: product.id + "somerandom",
+        Key: thumbNailKey,
+    };
+    const command1 = new client_s3_1.GetObjectCommand(input1);
+    const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {});
+    const updated = yield prismaClientExport_1.default.product.update({
+        where: {
+            id: product.id,
+        },
+        data: {
+            thumbNail: url,
+        },
+    });
     res.status(200).json({
         status: "success",
-        // updated,
+        updated,
     });
 }));
 exports.createProduct = createProduct;
@@ -176,27 +173,27 @@ const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter
     if (!product) {
         throw new appError_1.default(`Product with ${productId} Product ID doesnot exist`, 500);
     }
-    let input;
-    input = {
-        Bucket: productId + "somerandom",
-        Key: `${product === null || product === void 0 ? void 0 : product.thumbNail}`,
-    };
-    const command = new client_s3_1.GetObjectCommand(input);
-    const thumbNailURL = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command);
+    // let input;
+    // input = {
+    //     Bucket: productId + "somerandom",
+    //     Key: `${product?.thumbNail}`,
+    // };
+    // const command = new GetObjectCommand(input);
+    // const thumbNailURL = await getSignedUrl(s3, command);
     //get sideImageURL now
-    let sideImageURL = [];
-    if (product.sideImages.length >= 1) {
-        const objectList = yield (0, bucketControl_1.listObjects)(productId + "somerandom");
-        objectList.forEach((value) => __awaiter(void 0, void 0, void 0, function* () {
-            const input1 = {
-                Bucket: productId + "somerandom",
-                Key: value.Key,
-            };
-            const command = new client_s3_1.GetObjectCommand(input1);
-            const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command);
-            sideImageURL.push(url);
-        }));
-    }
+    // let sideImageURL: string[] = [];
+    // if (product.sideImages.length >= 1) {
+    //     const objectList = await listObjects(productId + "somerandom");
+    //     objectList.forEach(async (value) => {
+    //         const input1 = {
+    //             Bucket: productId + "somerandom",
+    //             Key: value.Key,
+    //         };
+    //         const command = new GetObjectCommand(input1);
+    //         const url = await getSignedUrl(s3, command);
+    //         sideImageURL.push(url);
+    //     });
+    // }
     res.status(200).json({
         status: "success",
         product,

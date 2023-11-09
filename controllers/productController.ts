@@ -33,7 +33,7 @@ const returnInputAccMimetype = (file: any, bucketName: any, key: any) => {
 const deleteProduct = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const id = Number(req.params.id);
-        const resp = await deleteBucket(id + "somerandom");
+        await deleteBucket(id + "somerandom");
 
         await prisma.product.delete({
             where: {
@@ -44,13 +44,13 @@ const deleteProduct = catchAsync(
         res.status(200).json({
             status: "success",
             message: "Product deleted successfully !",
-            resp,
         });
     }
 );
 const editProduct = async (req: Request, res: Response, next: NextFunction) => {
     const id = Number(req.params.id);
-    const { title, subTitle, description, price } = req.body;
+    const { title, subTitle, description } = req.body;
+    const price = req.body.price * 1;
     let editable = [
         { name: "title", value: title },
         { name: "subTitle", value: subTitle },

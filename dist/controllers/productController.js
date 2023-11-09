@@ -30,7 +30,7 @@ const returnInputAccMimetype = (file, bucketName, key) => {
 };
 const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
-    const resp = yield (0, bucketControl_1.deleteBucket)(id + "somerandom");
+    yield (0, bucketControl_1.deleteBucket)(id + "somerandom");
     yield prismaClientExport_1.default.product.delete({
         where: {
             id,
@@ -39,13 +39,13 @@ const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
     res.status(200).json({
         status: "success",
         message: "Product deleted successfully !",
-        resp,
     });
 }));
 exports.deleteProduct = deleteProduct;
 const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
-    const { title, subTitle, description, price } = req.body;
+    const { title, subTitle, description } = req.body;
+    const price = req.body.price * 1;
     let editable = [
         { name: "title", value: title },
         { name: "subTitle", value: subTitle },

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import AppError from "../errors/appError";
 
 require("dotenv").config();
 
@@ -33,7 +34,7 @@ const sendMailNormal = async (options: Options) => {
         await transporter.sendMail(message);
     } catch (err) {
         console.log(err);
-        throw new Error("Error from Nodemailer sendMailNormal");
+        throw new AppError("Error from Nodemailer sendMailNormal", 500);
     }
 };
 

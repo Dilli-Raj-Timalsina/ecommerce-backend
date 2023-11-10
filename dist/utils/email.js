@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendMailNormal = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const appError_1 = __importDefault(require("../errors/appError"));
 require("dotenv").config();
 const sendMailNormal = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -40,7 +41,7 @@ const sendMailNormal = (options) => __awaiter(void 0, void 0, void 0, function* 
     }
     catch (err) {
         console.log(err);
-        throw new Error("Error from Nodemailer sendMailNormal");
+        throw new appError_1.default("Error from Nodemailer sendMailNormal", 500);
     }
 });
 exports.sendMailNormal = sendMailNormal;

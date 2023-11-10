@@ -34,7 +34,7 @@ const nofifyPurchase = async (
     const { name, email, location, phone } = req.body;
 
     const options = {
-        email: email,
+        email: "r30846797@gmail.com",
         subject: "Order confirmed",
         message: ` 
           Name : ${name} ,

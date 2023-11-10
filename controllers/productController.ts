@@ -109,9 +109,11 @@ const createProduct = catchAsync(
             Bucket: product.id + "somerandom",
             Key: thumbNailKey,
         };
-
+        const expires = new Date();
         const command1 = new GetObjectCommand(input1);
-        const url = await getSignedUrl(s3, command1, {});
+        const url = await getSignedUrl(s3, command1, {
+            expiresIn: expires.getDate() + 7,
+        });
 
         const updated = await prisma.product.update({
             where: {

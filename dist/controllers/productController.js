@@ -101,7 +101,7 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
     const expires = new Date();
     const command1 = new client_s3_1.GetObjectCommand(input1);
     const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {
-        expiresIn: expires.getDate() + 7,
+        expiresIn: 36000,
     });
     const updated = yield prismaClientExport_1.default.product.update({
         where: {

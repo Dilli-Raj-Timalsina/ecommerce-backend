@@ -11,4 +11,5 @@ userRouter.route("/signup").post(userController_1.signupControl);
 userRouter.route("/login").post(userController_1.loginControl);
 userRouter.route("/updateCart").patch(userController_1.updateCart);
 userRouter.route("/getCartItem").post(userController_1.getCartItem);
+userRouter.route("/delete/:id").delete(userController_1.deleteUser);
 exports.default = userRouter;

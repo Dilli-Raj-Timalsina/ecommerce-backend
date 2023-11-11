@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
+exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -43,10 +43,11 @@ const createSendToken = (user, statusCode, res) => __awaiter(void 0, void 0, voi
     if (process.env.NODE_ENV === "production")
         cookieOptions.httpOnly = true;
     res.cookie("jwt", token, cookieOptions);
-    const { id, email } = user;
+    const { id, email, cart } = user;
     const userProfile = {
         id,
         email,
+        cart,
     };
     res.status(statusCode).json({
         status: "success",
@@ -95,7 +96,7 @@ const signupControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         },
     }));
     // // if everything is ok :send token to the user
-    yield createSendToken({ id: user.id, email: user.email }, 200, res);
+    yield createSendToken(user, 200, res);
 }));
 exports.signupControl = signupControl;
 const loginControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -110,15 +111,16 @@ const loginControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         throw new appError_1.default("Incorrect email or password", 405);
     }
     //c) If everything is ok: send token to the logged in user
-    yield createSendToken({ id: user.id, email: user.email }, 200, res);
+    yield createSendToken({ id: user.id, email: user.email, name: user.name, cart: user.cart }, 200, res);
 }));
 exports.loginControl = loginControl;
 const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { courseList, userId } = req.body;
+    const { cart, userId } = req.body;
+    const cartString = cart.map(String);
     yield prismaClientExport_1.default.user.update({
         where: { id: userId },
         data: {
-            cart: courseList,
+            cart: cartString,
         },
     });
     res.status(200).json({
@@ -127,6 +129,17 @@ const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
     });
 }));
 exports.updateCart = updateCart;
+const deleteUser = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    let userId = Number(req.params.id);
+    yield prismaClientExport_1.default.user.delete({
+        where: { id: userId },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "user deleted succesfully",
+    });
+}));
+exports.deleteUser = deleteUser;
 const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const product = yield prismaClientExport_1.default.product.findMany({
         where: {

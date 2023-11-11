@@ -13,6 +13,7 @@ type User = {
     email: string;
     id: number;
     name?: string;
+    cart: string[];
 };
 
 // 1:) return new jwt based on passed payload
@@ -44,11 +45,11 @@ const createSendToken = async (
     if (process.env.NODE_ENV === "production") cookieOptions.httpOnly = true;
 
     res.cookie("jwt", token, cookieOptions);
-    const { id, email } = user;
+    const { id, email, cart } = user;
     const userProfile = {
         id,
-
         email,
+        cart,
     };
 
     res.status(statusCode).json({
@@ -117,7 +118,7 @@ const signupControl = catchAsync(async (req: Request, res: Response) => {
     })) as unknown as User;
 
     // // if everything is ok :send token to the user
-    await createSendToken({ id: user.id, email: user.email }, 200, res);
+    await createSendToken(user, 200, res);
 });
 
 const loginControl = catchAsync(async (req: Request, res: Response) => {
@@ -134,21 +135,40 @@ const loginControl = catchAsync(async (req: Request, res: Response) => {
         throw new AppError("Incorrect email or password", 405);
     }
     //c) If everything is ok: send token to the logged in user
-    await createSendToken({ id: user.id, email: user.email }, 200, res);
+    await createSendToken(
+        { id: user.id, email: user.email, name: user.name!, cart: user.cart },
+        200,
+        res
+    );
 });
 
 const updateCart = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { courseList, userId } = req.body;
+        const { cart, userId } = req.body;
+        const cartString = cart.map(String);
+
         await prisma.user.update({
             where: { id: userId },
             data: {
-                cart: courseList,
+                cart: cartString,
             },
         });
         res.status(200).json({
             status: "success",
             message: "succesfully updated cart",
+        });
+    }
+);
+
+const deleteUser = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        let userId = Number(req.params.id);
+        await prisma.user.delete({
+            where: { id: userId },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "user deleted succesfully",
         });
     }
 );
@@ -170,4 +190,4 @@ const getCartItem = catchAsync(
     }
 );
 
-export { signupControl, loginControl, updateCart, getCartItem };
+export { signupControl, loginControl, updateCart, getCartItem, deleteUser };

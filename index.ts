@@ -23,20 +23,20 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-app.use(helmet());
+// app.use(helmet());
 
-app.use(xss());
+// app.use(xss());
 
 app.use(cookieParser());
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-});
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100,
+//     standardHeaders: true,
+//     legacyHeaders: false,
+// });
 
-app.use("/api", limiter);
+// app.use("/api", limiter);
 
 app.use("/api/v1/user", userRouter);
 

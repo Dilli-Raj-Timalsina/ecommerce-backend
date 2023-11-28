@@ -12,25 +12,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadSideImages = exports.getProductByCategory = exports.getAllProduct = exports.editProduct = exports.deleteProduct = exports.getSingleProduct = exports.createProduct = void 0;
+exports.getProductByCategory = exports.getAllProduct = exports.editProduct = exports.deleteProduct = exports.getSingleProduct = exports.createProduct = void 0;
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
-const client_s3_1 = require("@aws-sdk/client-s3");
 const prismaClientExport_1 = __importDefault(require("./../prisma/prismaClientExport"));
-const client_s3_2 = require("@aws-sdk/client-s3");
-const bucketControl_1 = require("./../awsConfig/bucketControl");
+const client_s3_1 = require("@aws-sdk/client-s3");
 const credential_1 = __importDefault(require("./../awsConfig/credential"));
 const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
 const appError_1 = __importDefault(require("../errors/appError"));
-const returnInputAccMimetype = (file, bucketName, key) => {
-    return {
-        Bucket: bucketName,
-        Key: key,
-        Body: file.buffer,
-    };
-};
 const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
-    yield (0, bucketControl_1.deleteBucket)(id + "somerandom");
+    const product = yield prismaClientExport_1.default.product.findUnique({
+        where: {
+            id: id,
+        },
+        select: {
+            sideImages: true,
+        },
+    });
+    const objects = product === null || product === void 0 ? void 0 : product.sideImages.map((value) => {
+        return { Key: value };
+    });
+    const input = {
+        Bucket: "9somerandom",
+        Delete: {
+            Objects: objects,
+        },
+    };
+    const command = new client_s3_1.DeleteObjectsCommand(input);
+    yield credential_1.default.send(command);
     yield prismaClientExport_1.default.product.delete({
         where: {
             id,
@@ -73,8 +82,24 @@ const editProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.editProduct = editProduct;
 const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { title, price, description, subTitle, category } = req.body;
-    const thumbNailKey = `${Date.now()}-${req.file.originalname}`;
+    const { title, price, description, subTitle, category, sideImage, thumbnail, } = req.body;
+    // Cloud work:
+    let sideImageURL = [];
+    let inputs = sideImage.map((name, index) => {
+        sideImageURL.push(`${category}/${"photo" + Math.random() * 10000000000}.${name.split("/")[1]}`);
+        return new client_s3_1.PutObjectCommand({
+            Bucket: "9somerandom",
+            Key: sideImageURL[index],
+            ContentType: name,
+        });
+    });
+    let thumbNailKey = `${category}/${"photo" + Math.random() * 10000000000}.${thumbnail.split("/")[1]}`;
+    inputs.push(new client_s3_1.PutObjectCommand({
+        Bucket: "9somerandom",
+        Key: thumbNailKey,
+        ContentType: `image/${thumbnail.split("/")[1]}`,
+    }));
+    let urls = yield Promise.all(inputs.map((input) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, input, { expiresIn: 3600 }); })));
     //1:) create db product
     const product = (yield prismaClientExport_1.default.product.create({
         data: {
@@ -83,89 +108,19 @@ const createProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
             price: price * 1,
             description,
             subTitle,
-            thumbNail: thumbNailKey,
+            thumbNail: `https://9somerandom.s3.ap-south-1.amazonaws.com/${thumbNailKey}`,
+            sideImages: sideImageURL,
         },
     }));
-    // Cloud work:
-    yield (0, bucketControl_1.createBucket)({ Bucket: product.id + "somerandom" });
-    const command = new client_s3_2.PutObjectCommand({
-        Bucket: product.id + "somerandom",
-        Key: thumbNailKey,
-        Body: req.file.buffer,
-    });
-    yield credential_1.default.send(command);
-    const input1 = {
-        Bucket: product.id + "somerandom",
-        Key: thumbNailKey,
-    };
-    const expires = new Date();
-    const command1 = new client_s3_1.GetObjectCommand(input1);
-    const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {
-        expiresIn: 36000,
-    });
-    const updated = yield prismaClientExport_1.default.product.update({
-        where: {
-            id: product.id,
-        },
-        data: {
-            thumbNail: url,
-        },
-    });
     res.status(200).json({
         status: "success",
-        updated,
+        urls,
+        thumbnail: urls[urls.length - 1],
+        sideImageURL,
+        thumbNailKey,
     });
 }));
 exports.createProduct = createProduct;
-const uploadSideImages = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    let productId = Number(req.params.id);
-    let sideImages = [];
-    //   @ts-ignore
-    req.files.forEach((file) => {
-        sideImages.push(file.originalname);
-    });
-    const product = yield prismaClientExport_1.default.product.update({
-        where: { id: productId },
-        data: {
-            sideImages: sideImages,
-        },
-    });
-    //@ts-ignore
-    const inputs = req.files.map((file, index) => {
-        let bucketName = Date.now() + sideImages[index];
-        sideImages[index] = bucketName;
-        return returnInputAccMimetype(file, product.id + "somerandom", bucketName);
-    });
-    yield Promise.all(inputs.map((input) => credential_1.default.send(new client_s3_2.PutObjectCommand(input))));
-    //get all url of side image
-    let sideImagesURL = [];
-    for (const value of sideImages) {
-        const input1 = {
-            Bucket: product.id + "somerandom",
-            Key: value,
-        };
-        const command1 = new client_s3_1.GetObjectCommand(input1);
-        const url = yield (0, s3_request_presigner_1.getSignedUrl)(credential_1.default, command1, {});
-        sideImagesURL.push(url);
-        console.log(sideImagesURL, "test1");
-    }
-    let updatedProduct;
-    if (sideImagesURL.length >= 1) {
-        updatedProduct = yield prismaClientExport_1.default.product.update({
-            where: {
-                id: product.id,
-            },
-            data: {
-                sideImages: sideImagesURL,
-            },
-        });
-    }
-    res.status(200).json({
-        status: "Success",
-        updatedProduct: updatedProduct,
-    });
-}));
-exports.uploadSideImages = uploadSideImages;
 const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     let productId = Number(req.params.id);
     const product = yield prismaClientExport_1.default.product.findFirst({
@@ -176,27 +131,6 @@ const getSingleProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter
     if (!product) {
         throw new appError_1.default(`Product with ${productId} Product ID doesnot exist`, 500);
     }
-    // let input;
-    // input = {
-    //     Bucket: productId + "somerandom",
-    //     Key: `${product?.thumbNail}`,
-    // };
-    // const command = new GetObjectCommand(input);
-    // const thumbNailURL = await getSignedUrl(s3, command);
-    //get sideImageURL now
-    // let sideImageURL: string[] = [];
-    // if (product.sideImages.length >= 1) {
-    //     const objectList = await listObjects(productId + "somerandom");
-    //     objectList.forEach(async (value) => {
-    //         const input1 = {
-    //             Bucket: productId + "somerandom",
-    //             Key: value.Key,
-    //         };
-    //         const command = new GetObjectCommand(input1);
-    //         const url = await getSignedUrl(s3, command);
-    //         sideImageURL.push(url);
-    //     });
-    // }
     res.status(200).json({
         status: "success",
         product,

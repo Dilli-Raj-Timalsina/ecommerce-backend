@@ -3,8 +3,6 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import prisma from "./../prisma/prismaClientExport";
 import { PutObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
-import { deleteBucket } from "./../awsConfig/bucketControl";
-
 import s3 from "./../awsConfig/credential";
 import catchAsync from "../errors/catchAsync";
 import AppError from "../errors/appError";
@@ -27,14 +25,21 @@ const deleteProduct = catchAsync(
             },
             select: {
                 sideImages: true,
+                thumbNail: true,
             },
         });
-        const objects = product?.sideImages.map((value: string) => {
-            return { Key: value };
+        let objects = product?.sideImages.map((value: string) => {
+            return { Key: "/" + value };
+        });
+
+        objects?.push({
+            Key: `/${product?.thumbNail.split("/")[3]}/${
+                product?.thumbNail.split("/")[4]
+            }`,
         });
 
         const input = {
-            Bucket: "9somerandom", // required
+            Bucket: "9somerandom",
             Delete: {
                 Objects: objects,
             },

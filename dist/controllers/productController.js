@@ -27,10 +27,14 @@ const deleteProduct = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
         },
         select: {
             sideImages: true,
+            thumbNail: true,
         },
     });
-    const objects = product === null || product === void 0 ? void 0 : product.sideImages.map((value) => {
-        return { Key: value };
+    let objects = product === null || product === void 0 ? void 0 : product.sideImages.map((value) => {
+        return { Key: "/" + value };
+    });
+    objects === null || objects === void 0 ? void 0 : objects.push({
+        Key: `/${product === null || product === void 0 ? void 0 : product.thumbNail.split("/")[3]}/${product === null || product === void 0 ? void 0 : product.thumbNail.split("/")[4]}`,
     });
     const input = {
         Bucket: "9somerandom",

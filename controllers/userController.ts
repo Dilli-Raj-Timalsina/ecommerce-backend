@@ -190,4 +190,47 @@ const getCartItem = catchAsync(
     }
 );
 
-export { signupControl, loginControl, updateCart, getCartItem, deleteUser };
+const updateWishList = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { wishList, userId } = req.body;
+        const wishListString = wishList.map(String);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                wishList: wishListString,
+            },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "succesfully updated cart",
+        });
+    }
+);
+
+const getWishList = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const product = await prisma.product.findMany({
+            where: {
+                id: {
+                    in: req.body.wishList,
+                },
+            },
+        });
+
+        res.status(200).json({
+            status: "success",
+            product,
+        });
+    }
+);
+
+export {
+    signupControl,
+    loginControl,
+    updateCart,
+    getCartItem,
+    deleteUser,
+    getWishList,
+    updateWishList,
+};

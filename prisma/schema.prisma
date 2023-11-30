@@ -18,6 +18,7 @@ model User {
   token          String?
   contact        Float?
   cart           String[]
+  wishList       String[]
   profilePicture String?
   bio            String?
 

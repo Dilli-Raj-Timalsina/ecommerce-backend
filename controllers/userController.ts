@@ -210,10 +210,24 @@ const updateWishList = catchAsync(
 
 const getWishList = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
+        const userId = Number(req.params.id);
+        const wishList = (
+            await prisma.user.findFirst({
+                where: {
+                    id: userId,
+                },
+                select: {
+                    wishList: true,
+                },
+            })
+        )?.wishList;
+
+        const wishListNumber = wishList!.map(Number);
+
         const product = await prisma.product.findMany({
             where: {
                 id: {
-                    in: req.body.wishList,
+                    in: wishListNumber,
                 },
             },
         });

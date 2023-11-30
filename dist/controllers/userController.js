@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
+exports.updateWishList = exports.getWishList = exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -154,3 +154,43 @@ const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void
     });
 }));
 exports.getCartItem = getCartItem;
+const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { wishList, userId } = req.body;
+    const wishListString = wishList.map(String);
+    yield prismaClientExport_1.default.user.update({
+        where: { id: userId },
+        data: {
+            wishList: wishListString,
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "succesfully updated cart",
+    });
+}));
+exports.updateWishList = updateWishList;
+const getWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = Number(req.params.id);
+    const wishList = (_a = (yield prismaClientExport_1.default.user.findFirst({
+        where: {
+            id: userId,
+        },
+        select: {
+            wishList: true,
+        },
+    }))) === null || _a === void 0 ? void 0 : _a.wishList;
+    const wishListNumber = wishList.map(Number);
+    const product = yield prismaClientExport_1.default.product.findMany({
+        where: {
+            id: {
+                in: wishListNumber,
+            },
+        },
+    });
+    res.status(200).json({
+        status: "success",
+        product,
+    });
+}));
+exports.getWishList = getWishList;

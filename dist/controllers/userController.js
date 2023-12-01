@@ -155,12 +155,27 @@ const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void
 }));
 exports.getCartItem = getCartItem;
 const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { wishList, userId } = req.body;
-    const wishListString = wishList.map(String);
+    var _a;
+    const userId = Number(req.body.userId);
+    const { wishList } = req.body;
+    let wishListArray = (_a = (yield prismaClientExport_1.default.user.findFirst({
+        where: {
+            id: userId,
+        },
+    }))) === null || _a === void 0 ? void 0 : _a.wishList;
+    if (!(wishListArray === null || wishListArray === void 0 ? void 0 : wishListArray.includes(wishList))) {
+        wishListArray === null || wishListArray === void 0 ? void 0 : wishListArray.push(wishList);
+    }
+    else {
+        wishListArray = wishListArray === null || wishListArray === void 0 ? void 0 : wishListArray.filter((item) => {
+            return item != wishList;
+        });
+    }
+    console.log(wishListArray);
     yield prismaClientExport_1.default.user.update({
         where: { id: userId },
         data: {
-            wishList: wishListString,
+            wishList: wishListArray,
         },
     });
     res.status(200).json({
@@ -170,16 +185,16 @@ const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(v
 }));
 exports.updateWishList = updateWishList;
 const getWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _b;
     const userId = Number(req.params.id);
-    const wishList = (_a = (yield prismaClientExport_1.default.user.findFirst({
+    const wishList = (_b = (yield prismaClientExport_1.default.user.findFirst({
         where: {
             id: userId,
         },
         select: {
             wishList: true,
         },
-    }))) === null || _a === void 0 ? void 0 : _a.wishList;
+    }))) === null || _b === void 0 ? void 0 : _b.wishList;
     const wishListNumber = wishList.map(Number);
     const product = yield prismaClientExport_1.default.product.findMany({
         where: {

@@ -192,13 +192,31 @@ const getCartItem = catchAsync(
 
 const updateWishList = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { wishList, userId } = req.body;
-        const wishListString = wishList.map(String);
+        const userId = Number(req.body.userId);
+        const { wishList } = req.body;
+
+        let wishListArray = (
+            await prisma.user.findFirst({
+                where: {
+                    id: userId,
+                },
+            })
+        )?.wishList;
+
+        if (!wishListArray?.includes(wishList)) {
+            wishListArray?.push(wishList);
+        } else {
+            wishListArray = wishListArray?.filter((item) => {
+                return item != wishList;
+            });
+        }
+
+        console.log(wishListArray);
 
         await prisma.user.update({
             where: { id: userId },
             data: {
-                wishList: wishListString,
+                wishList: wishListArray,
             },
         });
         res.status(200).json({

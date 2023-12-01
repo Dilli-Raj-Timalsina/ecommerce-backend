@@ -193,7 +193,9 @@ const getCartItem = catchAsync(
 const updateWishList = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const userId = Number(req.body.userId);
-        const { wishList } = req.body;
+        const wishList = String(req.body.wishList);
+
+        console.log(typeof userId, typeof wishList);
 
         let wishListArray = (
             await prisma.user.findFirst({
@@ -210,8 +212,6 @@ const updateWishList = catchAsync(
                 return item != wishList;
             });
         }
-
-        console.log(wishListArray);
 
         await prisma.user.update({
             where: { id: userId },

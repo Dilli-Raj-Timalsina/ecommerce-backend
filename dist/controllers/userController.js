@@ -157,7 +157,8 @@ exports.getCartItem = getCartItem;
 const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = Number(req.body.userId);
-    const { wishList } = req.body;
+    const wishList = String(req.body.wishList);
+    console.log(typeof userId, typeof wishList);
     let wishListArray = (_a = (yield prismaClientExport_1.default.user.findFirst({
         where: {
             id: userId,
@@ -171,7 +172,6 @@ const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(v
             return item != wishList;
         });
     }
-    console.log(wishListArray);
     yield prismaClientExport_1.default.user.update({
         where: { id: userId },
         data: {

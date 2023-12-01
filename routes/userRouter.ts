@@ -15,7 +15,7 @@ const userRouter = express.Router();
 userRouter.route("/signup").post(signupControl);
 userRouter.route("/login").post(loginControl);
 userRouter.route("/updateCart").patch(updateCart);
-userRouter.route("/getCartItem").post(getCartItem);
+userRouter.route("/getCartItem/:id").get(getCartItem);
 userRouter.route("/updateWishList").patch(updateWishList);
 userRouter.route("/getWishList/:id").get(getWishList);
 userRouter.route("/delete/:id").delete(deleteUser);

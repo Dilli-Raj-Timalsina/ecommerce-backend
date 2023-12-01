@@ -13,7 +13,14 @@ type User = {
     email: string;
     id: number;
     name?: string;
-    cart: string[];
+    cart: Cart[];
+};
+
+type Cart = {
+    id: number;
+    amount: String;
+    productId: String;
+    userId?: number | null;
 };
 
 // 1:) return new jwt based on passed payload
@@ -130,13 +137,18 @@ const loginControl = catchAsync(async (req: Request, res: Response) => {
     }
     // b) Check if user exists && password is correct
     const user = await prisma.user.findFirst({ where: { email: email } });
+    const cart = await prisma.cart.findMany({
+        where: {
+            userId: user!.id,
+        },
+    });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
         throw new AppError("Incorrect email or password", 405);
     }
-    //c) If everything is ok: send token to the logged in user
+    // c) If everything is ok: send token to the logged in user
     await createSendToken(
-        { id: user.id, email: user.email, name: user.name!, cart: user.cart },
+        { id: user.id, email: user.email, name: user.name!, cart: cart },
         200,
         res
     );
@@ -144,15 +156,44 @@ const loginControl = catchAsync(async (req: Request, res: Response) => {
 
 const updateCart = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { cart, userId } = req.body;
-        const cartString = cart.map(String);
+        const { amount, userId, productId } = req.body;
 
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                cart: cartString,
+        const cartInfo = {
+            amount: amount,
+            productId: productId,
+        };
+        const cartArray = await prisma.cart.findMany({
+            where: {
+                userId: userId,
             },
         });
+        let contains = false;
+        let itemID;
+        cartArray.forEach((item) => {
+            if (item.productId == productId) {
+                contains = true;
+                itemID = item.id;
+            }
+        });
+        if (contains) {
+            await prisma.cart.delete({
+                where: {
+                    id: itemID,
+                    productId: productId,
+                },
+            });
+        } else {
+            await prisma.cart.create({
+                data: {
+                    ...cartInfo,
+                    User: {
+                        connect: {
+                            id: userId,
+                        },
+                    },
+                },
+            });
+        }
         res.status(200).json({
             status: "success",
             message: "succesfully updated cart",
@@ -175,10 +216,20 @@ const deleteUser = catchAsync(
 
 const getCartItem = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
+        const userId = Number(req.params.id);
+        const cartArray = await prisma.cart.findMany({
+            where: {
+                userId: userId,
+            },
+        });
+        const productIds = cartArray.map((item) => {
+            return Number(item.productId);
+        });
+
         const product = await prisma.product.findMany({
             where: {
                 id: {
-                    in: req.body.cart,
+                    in: productIds,
                 },
             },
         });
@@ -194,8 +245,6 @@ const updateWishList = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const userId = Number(req.body.userId);
         const wishList = String(req.body.wishList);
-
-        console.log(typeof userId, typeof wishList);
 
         let wishListArray = (
             await prisma.user.findFirst({

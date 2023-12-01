@@ -10,6 +10,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Cart {
+  id        Int    @id @default(autoincrement())
+  amount    String
+  productId String
+  User      User?  @relation(fields: [userId], references: [id])
+  userId    Int?
+
+  @@map("cart")
+}
+
 model User {
   id             Int      @id @default(autoincrement())
   name           String?
@@ -17,7 +27,7 @@ model User {
   password       String
   token          String?
   contact        Float?
-  cart           String[]
+  cart           Cart[]
   wishList       String[]
   profilePicture String?
   bio            String?

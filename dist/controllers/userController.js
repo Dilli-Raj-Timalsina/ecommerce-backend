@@ -107,22 +107,54 @@ const loginControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
     }
     // b) Check if user exists && password is correct
     const user = yield prismaClientExport_1.default.user.findFirst({ where: { email: email } });
+    const cart = yield prismaClientExport_1.default.cart.findMany({
+        where: {
+            userId: user.id,
+        },
+    });
     if (!user || !(yield bcrypt_1.default.compare(password, user.password))) {
         throw new appError_1.default("Incorrect email or password", 405);
     }
-    //c) If everything is ok: send token to the logged in user
-    yield createSendToken({ id: user.id, email: user.email, name: user.name, cart: user.cart }, 200, res);
+    // c) If everything is ok: send token to the logged in user
+    yield createSendToken({ id: user.id, email: user.email, name: user.name, cart: cart }, 200, res);
 }));
 exports.loginControl = loginControl;
 const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { cart, userId } = req.body;
-    const cartString = cart.map(String);
-    yield prismaClientExport_1.default.user.update({
-        where: { id: userId },
-        data: {
-            cart: cartString,
+    const { amount, userId, productId } = req.body;
+    const cartInfo = {
+        amount: amount,
+        productId: productId,
+    };
+    const cartArray = yield prismaClientExport_1.default.cart.findMany({
+        where: {
+            userId: userId,
         },
     });
+    let contains = false;
+    let itemID;
+    cartArray.forEach((item) => {
+        if (item.productId == productId) {
+            contains = true;
+            itemID = item.id;
+        }
+    });
+    if (contains) {
+        yield prismaClientExport_1.default.cart.delete({
+            where: {
+                id: itemID,
+                productId: productId,
+            },
+        });
+    }
+    else {
+        yield prismaClientExport_1.default.cart.create({
+            data: Object.assign(Object.assign({}, cartInfo), { User: {
+                    connect: {
+                        id: userId,
+                    },
+                } }),
+        });
+    }
     res.status(200).json({
         status: "success",
         message: "succesfully updated cart",
@@ -141,10 +173,19 @@ const deleteUser = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
 }));
 exports.deleteUser = deleteUser;
 const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.params.id);
+    const cartArray = yield prismaClientExport_1.default.cart.findMany({
+        where: {
+            userId: userId,
+        },
+    });
+    const productIds = cartArray.map((item) => {
+        return Number(item.productId);
+    });
     const product = yield prismaClientExport_1.default.product.findMany({
         where: {
             id: {
-                in: req.body.cart,
+                in: productIds,
             },
         },
     });
@@ -158,7 +199,6 @@ const updateWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(v
     var _a;
     const userId = Number(req.body.userId);
     const wishList = String(req.body.wishList);
-    console.log(typeof userId, typeof wishList);
     let wishListArray = (_a = (yield prismaClientExport_1.default.user.findFirst({
         where: {
             id: userId,

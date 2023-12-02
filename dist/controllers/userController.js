@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateWishList = exports.getWishList = exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
+exports.verifyControl = exports.forgetControl = exports.updateWishList = exports.getWishList = exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -20,6 +20,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const prismaClientExport_1 = __importDefault(require("../prisma/prismaClientExport"));
 const catchAsync_1 = __importDefault(require("../errors/catchAsync"));
 const appError_1 = __importDefault(require("../errors/appError"));
+const email_1 = require("../utils/email");
 dotenv_1.default.config({ path: __dirname + "/.env" });
 // 1:) return new jwt based on passed payload
 const signToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
@@ -121,6 +122,8 @@ const loginControl = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
 exports.loginControl = loginControl;
 const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { amount, userId, productId } = req.body;
+    console.log(req.body);
+    console.log(amount, userId, productId);
     const cartInfo = {
         amount: amount,
         productId: productId,
@@ -249,3 +252,57 @@ const getWishList = (0, catchAsync_1.default)((req, res, next) => __awaiter(void
     });
 }));
 exports.getWishList = getWishList;
+const forgetControl = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    //a) check whether user exist or not
+    const { email } = req.body;
+    const currUser = yield prismaClientExport_1.default.user.findFirst({
+        where: { email: email },
+    });
+    if (!currUser) {
+        throw new appError_1.default("User does not exist", 401);
+    }
+    //b) generate reset token:
+    const resetToken = Math.floor(Math.random() * 9000) + 1000;
+    //c) update user's token with salted and hashed token :
+    yield prismaClientExport_1.default.user.update({
+        where: { email: email },
+        data: { token: resetToken + "" },
+    });
+    //d) preparing credentials to send user an email:
+    const options = {
+        email: email,
+        subject: "Reset password A+ pathshala ",
+        message: `Your reset OTP is   : ${resetToken}\n
+    please do not share it with anybody `,
+    };
+    //e) send reset password link to the user's email
+    yield (0, email_1.sendMailNormal)(options);
+    //f) if everything succeds then send success message
+    res.status(200).json({
+        status: "success",
+        message: "checkout your email to reset password",
+    });
+}));
+exports.forgetControl = forgetControl;
+const verifyControl = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    //a) getting user reset credential :
+    const { email, otp, password } = req.body;
+    console.log(email, otp, password);
+    //b) if user doesn't exist or token is invalid
+    const user = yield prismaClientExport_1.default.user.findFirst({ where: { email: email } });
+    if (!user || !(otp == user.token)) {
+        throw new appError_1.default("Invalid or expired token, please reset again!!", 403);
+    }
+    const random = Math.floor(Math.random() * 9000) + 1000;
+    //c) hash the password and update , also update otp
+    const hash = yield bcrypt_1.default.hash(password, 10);
+    yield prismaClientExport_1.default.user.update({
+        where: { email: email },
+        data: { password: hash, token: random + "" },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "verification has done, change the password now",
+    });
+}));
+exports.verifyControl = verifyControl;

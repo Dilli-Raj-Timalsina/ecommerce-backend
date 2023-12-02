@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import prisma from "../prisma/prismaClientExport";
 import catchAsync from "../errors/catchAsync";
 import AppError from "../errors/appError";
+import { sendMailNormal } from "../utils/email";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -158,6 +159,9 @@ const updateCart = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const { amount, userId, productId } = req.body;
 
+        console.log(req.body);
+        console.log(amount, userId, productId);
+
         const cartInfo = {
             amount: amount,
             productId: productId,
@@ -305,6 +309,73 @@ const getWishList = catchAsync(
         });
     }
 );
+const forgetControl = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        //a) check whether user exist or not
+        const { email } = req.body;
+        const currUser = await prisma.user.findFirst({
+            where: { email: email },
+        });
+
+        if (!currUser) {
+            throw new AppError("User does not exist", 401);
+        }
+        //b) generate reset token:
+        const resetToken = Math.floor(Math.random() * 9000) + 1000;
+
+        //c) update user's token with salted and hashed token :
+
+        await prisma.user.update({
+            where: { email: email },
+            data: { token: resetToken + "" },
+        });
+
+        //d) preparing credentials to send user an email:
+
+        const options = {
+            email: email,
+            subject: "Reset password A+ pathshala ",
+            message: `Your reset OTP is   : ${resetToken}\n
+    please do not share it with anybody `,
+        };
+        //e) send reset password link to the user's email
+        await sendMailNormal(options);
+
+        //f) if everything succeds then send success message
+        res.status(200).json({
+            status: "success",
+            message: "checkout your email to reset password",
+        });
+    }
+);
+const verifyControl = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        //a) getting user reset credential :
+        const { email, otp, password } = req.body;
+        console.log(email, otp, password);
+
+        //b) if user doesn't exist or token is invalid
+        const user = await prisma.user.findFirst({ where: { email: email } });
+        if (!user || !(otp == user.token)) {
+            throw new AppError(
+                "Invalid or expired token, please reset again!!",
+                403
+            );
+        }
+        const random = Math.floor(Math.random() * 9000) + 1000;
+        //c) hash the password and update , also update otp
+        const hash = await bcrypt.hash(password, 10);
+        await prisma.user.update({
+            where: { email: email },
+            data: { password: hash, token: random + "" },
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "verification has done, change the password now",
+        });
+    }
+);
 
 export {
     signupControl,
@@ -314,4 +385,6 @@ export {
     deleteUser,
     getWishList,
     updateWishList,
+    forgetControl,
+    verifyControl,
 };

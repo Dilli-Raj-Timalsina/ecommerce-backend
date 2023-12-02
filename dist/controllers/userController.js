@@ -141,7 +141,7 @@ const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
             itemID = item.id;
         }
     });
-    if (contains || amount == 0) {
+    if (contains && amount == 0) {
         yield prismaClientExport_1.default.cart.delete({
             where: {
                 id: itemID,
@@ -149,7 +149,7 @@ const updateCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
             },
         });
     }
-    else {
+    else if (!contains) {
         yield prismaClientExport_1.default.cart.create({
             data: Object.assign(Object.assign({}, cartInfo), { User: {
                     connect: {

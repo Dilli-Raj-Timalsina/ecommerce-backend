@@ -179,7 +179,7 @@ const updateCart = catchAsync(
                 itemID = item.id;
             }
         });
-        if (contains) {
+        if (contains || amount == 0) {
             await prisma.cart.delete({
                 where: {
                     id: itemID,

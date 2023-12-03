@@ -48,3 +48,22 @@ model Product {
 
   @@map("products")
 }
+
+model Hero {
+  id          Int      @id @default(autoincrement())
+  h1title     String
+  h1subTitle  String
+  h2title     String
+  h2subTitle  String
+  h3title     String
+  h3subTitle  String
+  imageFirst  String
+  imageSecond String
+  imageThird  String
+  category1   String
+  category2   String
+  category3   String
+  createdDate DateTime @default(now())
+
+  @@map("heros")
+}

@@ -12,12 +12,14 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const errorController_1 = __importDefault(require("./errors/errorController"));
+const paymentRouter_1 = __importDefault(require("./routes/paymentRouter"));
 dotenv_1.default.config({ path: __dirname + "/.env" });
 const corsOptions = {
     origin: "http://localhost:3000",
 };
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
+app.use("/api", paymentRouter_1.default);
 app.use(body_parser_1.default.json());
 // app.use(helmet());
 // app.use(xss());

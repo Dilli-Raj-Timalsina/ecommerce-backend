@@ -10,6 +10,7 @@ import xss from "xss-clean";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import globalErrorHandler from "./errors/errorController";
+import paymentRouter from "./routes/paymentRouter";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -20,6 +21,8 @@ const corsOptions: CorsOptions = {
 const app = express();
 
 app.use(cors());
+
+app.use("/api", paymentRouter);
 
 app.use(bodyParser.json());
 

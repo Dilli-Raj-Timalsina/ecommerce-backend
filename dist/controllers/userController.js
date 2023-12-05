@@ -181,16 +181,33 @@ const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void
         where: {
             userId: userId,
         },
+        select: {
+            amount: true,
+            productId: true,
+        },
+        orderBy: {
+            productId: "asc",
+        },
     });
     const productIds = cartArray.map((item) => {
         return Number(item.productId);
     });
-    const product = yield prismaClientExport_1.default.product.findMany({
+    const newProduct = yield prismaClientExport_1.default.product.findMany({
         where: {
             id: {
                 in: productIds,
             },
         },
+        select: {
+            id: true,
+            title: true,
+            category: true,
+            thumbNail: true,
+            price: true,
+        },
+    });
+    let product = newProduct.map((item, index) => {
+        return Object.assign(Object.assign({}, item), cartArray[index]);
     });
     res.status(200).json({
         status: "success",

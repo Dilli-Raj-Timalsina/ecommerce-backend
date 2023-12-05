@@ -225,17 +225,37 @@ const getCartItem = catchAsync(
             where: {
                 userId: userId,
             },
+            select: {
+                amount: true,
+                productId: true,
+            },
+            orderBy: {
+                productId: "asc",
+            },
         });
         const productIds = cartArray.map((item) => {
             return Number(item.productId);
         });
 
-        const product = await prisma.product.findMany({
+        const newProduct = await prisma.product.findMany({
             where: {
                 id: {
                     in: productIds,
                 },
             },
+            select: {
+                id: true,
+                title: true,
+                category: true,
+                thumbNail: true,
+                price: true,
+            },
+        });
+        let product = newProduct.map((item, index) => {
+            return {
+                ...item,
+                ...cartArray[index],
+            };
         });
 
         res.status(200).json({

@@ -66,7 +66,7 @@ paymentRouter
                 },
                 unit_amount: product.price * 100,
             },
-            quantity: 1,
+            quantity: product.amount,
         }));
 
         const session = await stripe.checkout.sessions.create({

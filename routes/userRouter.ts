@@ -9,6 +9,7 @@ import {
     getWishList,
     forgetControl,
     verifyControl,
+    deleteAllCart,
 } from "../controllers/userController";
 
 const userRouter = express.Router();
@@ -23,5 +24,6 @@ userRouter.route("/getCartItem/:id").get(getCartItem);
 userRouter.route("/updateWishList").patch(updateWishList);
 userRouter.route("/getWishList/:id").get(getWishList);
 userRouter.route("/delete/:id").delete(deleteUser);
+userRouter.route("/deleteAllCart/:id").delete(deleteAllCart);
 
 export default userRouter;

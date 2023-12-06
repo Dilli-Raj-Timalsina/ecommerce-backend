@@ -16,4 +16,5 @@ userRouter.route("/getCartItem/:id").get(userController_1.getCartItem);
 userRouter.route("/updateWishList").patch(userController_1.updateWishList);
 userRouter.route("/getWishList/:id").get(userController_1.getWishList);
 userRouter.route("/delete/:id").delete(userController_1.deleteUser);
+userRouter.route("/deleteAllCart/:id").delete(userController_1.deleteAllCart);
 exports.default = userRouter;

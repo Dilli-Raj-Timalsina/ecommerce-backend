@@ -53,11 +53,12 @@ const createSendToken = async (
     if (process.env.NODE_ENV === "production") cookieOptions.httpOnly = true;
 
     res.cookie("jwt", token, cookieOptions);
-    const { id, email, cart } = user;
+    const { id, email, cart, name } = user;
     const userProfile = {
         id,
         email,
         cart,
+        name,
     };
 
     res.status(statusCode).json({
@@ -210,6 +211,20 @@ const deleteUser = catchAsync(
         let userId = Number(req.params.id);
         await prisma.user.delete({
             where: { id: userId },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "user deleted succesfully",
+        });
+    }
+);
+
+const deleteAllCart = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        let userId = Number(req.params.id);
+
+        await prisma.cart.deleteMany({
+            where: { userId: userId },
         });
         res.status(200).json({
             status: "success",
@@ -407,4 +422,5 @@ export {
     updateWishList,
     forgetControl,
     verifyControl,
+    deleteAllCart,
 };

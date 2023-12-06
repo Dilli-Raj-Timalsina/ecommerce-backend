@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyControl = exports.forgetControl = exports.updateWishList = exports.getWishList = exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
+exports.deleteAllCart = exports.verifyControl = exports.forgetControl = exports.updateWishList = exports.getWishList = exports.deleteUser = exports.getCartItem = exports.updateCart = exports.loginControl = exports.signupControl = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const util_1 = require("util");
@@ -44,11 +44,12 @@ const createSendToken = (user, statusCode, res) => __awaiter(void 0, void 0, voi
     if (process.env.NODE_ENV === "production")
         cookieOptions.httpOnly = true;
     res.cookie("jwt", token, cookieOptions);
-    const { id, email, cart } = user;
+    const { id, email, cart, name } = user;
     const userProfile = {
         id,
         email,
         cart,
+        name,
     };
     res.status(statusCode).json({
         status: "success",
@@ -175,6 +176,17 @@ const deleteUser = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 
     });
 }));
 exports.deleteUser = deleteUser;
+const deleteAllCart = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    let userId = Number(req.params.id);
+    yield prismaClientExport_1.default.cart.deleteMany({
+        where: { userId: userId },
+    });
+    res.status(200).json({
+        status: "success",
+        message: "user deleted succesfully",
+    });
+}));
+exports.deleteAllCart = deleteAllCart;
 const getCartItem = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = Number(req.params.id);
     const cartArray = yield prismaClientExport_1.default.cart.findMany({

@@ -11,7 +11,7 @@ const contactUs = async (req: Request, res: Response, next: NextFunction) => {
     const { name, email, subject, message, contact } = req.body;
 
     const options = {
-        email: email,
+        email: "r30846797@gmail.com",
         subject: subject,
         message: ` 
           Name : ${name} ,
@@ -37,28 +37,47 @@ const nofifyPurchase = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { name, email, location, phone } = req.body;
+    const { name, email, location, phone, item } = req.body;
 
-    const options = {
+    let itemDetail = item.reduce((total: string, item: any, i: any) => {
+        return (
+            total +
+            `Item ${i}=> Title : ${item.title} ,
+      Price : ${item.price} ,
+      Amount : ${item.amount} ,
+      \n`
+        );
+    }, "");
+
+    const options1 = {
         email: "r30846797@gmail.com",
-        subject: "Order confirmed",
-        message: ` 
+        subject: "New Order Arrived !",
+        message: `
           Name : ${name} ,
           Email :${email} ,
           phone : ${phone} ,
           location : ${location},
-           
+          item:${itemDetail}
+         `,
+    };
+    const options2 = {
+        email: email,
+        subject: "Your Order has been Confirmed !",
+        message: `
+          Name : ${name} ,
+          Email :${email} ,
+          phone : ${phone} ,
+          location : ${location},
+          item:${itemDetail}
          `,
     };
 
-    await sendMailNormal(options);
+    await sendMailNormal(options1);
+    await sendMailNormal(options2);
 
     res.status(200).json({
         status: "success",
         message: "email sent Successfully",
-        data: {
-            options,
-        },
     });
 };
 const createHero = catchAsync(
@@ -188,20 +207,3 @@ const getHero = catchAsync(
 );
 
 export { contactUs, nofifyPurchase, createHero, getHero };
-
-type Heros = {
-    id: number;
-    h1title: string;
-    h1subTitle: string;
-    h2title: string;
-    h2subTitle: string;
-    h3title: string;
-    h3subTitle: string;
-    imageFirst: string;
-    imageSecond: string;
-    imageThird: string;
-    category1: string;
-    category2: string;
-    category3: string;
-    createdDate: Date;
-};

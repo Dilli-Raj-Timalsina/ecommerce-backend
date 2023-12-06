@@ -9,6 +9,7 @@ paymentRouter.post(
     "/webhook",
     express.raw({ type: "application/json" }),
     async (req, res) => {
+        console.log("hii i am trigged");
         // Verify the event is from Stripe
         try {
             const stripeEvent = stripe.webhooks.constructEvent(
@@ -17,6 +18,7 @@ paymentRouter.post(
                 process.env.STRIPE_WEBHOOK_SECRET
             );
             const data = stripeEvent.data.object;
+            console.log(data);
             // Handle successful payment events
             if (stripeEvent.type === "payment_intent.succeeded") {
                 stripe.customers
@@ -75,8 +77,8 @@ paymentRouter
             line_items: lineItems,
             mode: "payment",
             customer: customer.id,
-            success_url: "http://localhost:3000/Cart",
-            cancel_url: "http://localhost:3000/",
+            success_url: "http://localhost:3000/Cart/payment-success",
+            cancel_url: "http://localhost:3000/Cart/payment-failed",
         });
 
         res.json({ id: session.id });

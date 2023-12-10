@@ -206,4 +206,108 @@ const getHero = catchAsync(
     }
 );
 
-export { contactUs, nofifyPurchase, createHero, getHero };
+const confirmDelivery = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { productIdArr, userId, amount, type } = req.body;
+        if (productIdArr.length == 1) {
+            await prisma.order.create({
+                data: {
+                    productId: productIdArr[0],
+                    userId,
+                    amount,
+                    type,
+                },
+            });
+        } else {
+            const orders = productIdArr.map((_: any, index: any) => {
+                return {
+                    productId: productIdArr[index],
+                    userId,
+                    amount,
+                    type,
+                };
+            });
+            await prisma.order.createMany({
+                data: orders,
+            });
+        }
+
+        res.status(200).json({
+            status: "success",
+            message: "product orders confirmed",
+        });
+    }
+);
+
+const confirmOrder = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { orderId, type } = req.body;
+
+        await prisma.order.update({
+            where: {
+                id: orderId,
+            },
+            data: {
+                type: type,
+            },
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "product orders confirmed",
+        });
+    }
+);
+
+const getOrderProfile = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const userId = Number(req.params.id);
+        const orders = await prisma.order.findMany({
+            where: {
+                userId: userId,
+            },
+            orderBy: {
+                productId: "asc",
+            },
+        });
+        const productId = orders.map((order, index) => {
+            return order.productId;
+        });
+
+        const product = await prisma.product.findMany({
+            where: {
+                id: {
+                    in: productId,
+                },
+            },
+            orderBy: {
+                id: "asc",
+            },
+        });
+
+        const OrderProfile = product.map((item, index) => {
+            return {
+                title: item.title,
+                price: item.price,
+                thumbNail: item.thumbNail,
+                productId: item.id,
+                orderType: orders[index].type,
+                amount: orders[index].amount,
+            };
+        });
+        res.status(200).json({
+            status: "success",
+            OrderProfile,
+        });
+    }
+);
+
+export {
+    contactUs,
+    nofifyPurchase,
+    createHero,
+    getHero,
+    confirmDelivery,
+    confirmOrder,
+    getOrderProfile,
+};

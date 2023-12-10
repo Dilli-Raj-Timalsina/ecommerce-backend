@@ -31,6 +31,7 @@ model User {
   wishList       String[]
   profilePicture String?
   bio            String?
+  Order          Order[]
 
   @@map("users")
 }
@@ -66,4 +67,22 @@ model Hero {
   createdDate DateTime @default(now())
 
   @@map("heros")
+}
+
+model Order {
+  id        Int       @id @default(autoincrement())
+  amount    String
+  productId Int
+  type      OrderType
+  User      User?     @relation(fields: [userId], references: [id])
+  userId    Int?
+
+  @@map("orders")
+}
+
+enum OrderType {
+  pending
+  completed
+  history
+  cancelled
 }

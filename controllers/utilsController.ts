@@ -291,6 +291,8 @@ const getOrderProfile = catchAsync(
                 price: item.price,
                 thumbNail: item.thumbNail,
                 productId: item.id,
+                category: item.category,
+                description: item.description,
                 orderType: orders[index].type,
                 amount: orders[index].amount,
             };

@@ -242,6 +242,7 @@ const confirmDelivery = catchAsync(
 const confirmOrder = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
         const { orderId, type } = req.body;
+        console.log(req.body);
 
         await prisma.order.update({
             where: {
@@ -304,6 +305,53 @@ const getOrderProfile = catchAsync(
     }
 );
 
+const getPendingOrder = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const orders = await prisma.order.findMany({
+            where: {
+                type: "pending",
+            },
+            orderBy: {
+                productId: "asc",
+            },
+        });
+
+        const productId = orders.map((order, index) => {
+            return order.productId;
+        });
+
+        const product = await prisma.product.findMany({
+            where: {
+                id: {
+                    in: productId,
+                },
+            },
+            orderBy: {
+                id: "asc",
+            },
+        });
+
+        const OrderProfile = product.map((item, index) => {
+            return {
+                title: item.title,
+                price: item.price,
+                thumbNail: item.thumbNail,
+                productId: item.id,
+                category: item.category,
+                description: item.description,
+                orderType: orders[index].type,
+                amount: orders[index].amount,
+                orderId: orders[index].id,
+            };
+        });
+
+        res.status(200).json({
+            status: "success",
+            OrderProfile,
+        });
+    }
+);
+
 export {
     contactUs,
     nofifyPurchase,
@@ -312,4 +360,5 @@ export {
     confirmDelivery,
     confirmOrder,
     getOrderProfile,
+    getPendingOrder,
 };
